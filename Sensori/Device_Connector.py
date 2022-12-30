@@ -35,9 +35,13 @@ if __name__ == "__main__":
                 pressure_cycle[i] = pressure.StandingGenerator(weight)["e"][0]["value"]
     elif situation == "Falling":
         for i in range(30):
-            if i in range(15,25):
+            if i == 15 or i == 25:
                 wrist_cycle[i] = wrist_Acc.NormalWristGenerator()["e"][0]["value"]
                 waist_cycle[i] = waist_Acc.StopGenerator()["e"][0]["value"]
+                pressure_cycle[i] = pressure.LyingGenerator()["e"][0]["value"]
+            elif i in range(16,25):
+                wrist_cycle[i] = wrist_Acc.NormalWristGenerator()["e"][0]["value"]
+                waist_cycle[i] = 2
                 pressure_cycle[i] = pressure.LyingGenerator()["e"][0]["value"]
             else:
                 wrist_cycle[i] = wrist_Acc.NormalWristGenerator()["e"][0]["value"]
