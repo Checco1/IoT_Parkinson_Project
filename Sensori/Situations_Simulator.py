@@ -13,11 +13,10 @@ if __name__ == "__main__":
     pressure_cycle = np.zeros(30)
 
     patientID = input("Insert patient's ID: ")
-    sensorID = patientID
     weight = 75
-    wrist_Acc=WristSimulator(patientID,sensorID)
-    waist_Acc=WaistSimulator(patientID,sensorID)
-    pressure=PressureSimulator(patientID,sensorID)
+    wrist_Acc=WristSimulator(patientID)
+    waist_Acc=WaistSimulator(patientID)
+    pressure=PressureSimulator(patientID)
     print("Insert which situation you want to simulate: ")
     print("- Freezing")
     print("- Falling")

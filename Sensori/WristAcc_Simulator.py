@@ -5,13 +5,13 @@ import time
 
 class WristSimulator():
 
-    def __init__(self,patientID,sensorID) -> None:
+    def __init__(self,patientID) -> None:
 
         self.bn = "marta/ParkinsonHelper/"
         self.patientID=patientID
-        self.sensorID = "wrist_acc"+str(sensorID)
+        self.sensorID = "wrist_acc"+str(patientID)
 
-        self.structure = {"bn": self.bn+str(patientID)+"/wrist_acc"+str(sensorID),
+        self.structure = {"bn": self.bn+str(patientID)+"/wrist_acc"+str(patientID),
                 "e":
                     [
                         {
@@ -48,7 +48,7 @@ class WristSimulator():
 
         DeviceInf = {
 	        "DeviceID" : self.sensorID,
-	        "deviceName" : "Wrist Accelerometer "+str(sensorID),
+	        "deviceName" : "Wrist Accelerometer "+str(self.patientID),
 	        "measureType":"MeanFrequencyAcceleration",
             "availableServices":"MQTT",
             "servicedetails": "To be defined"

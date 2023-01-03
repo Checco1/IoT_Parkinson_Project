@@ -6,12 +6,11 @@ import json
 
 class PressureSimulator():
 
-    def __init__(self,patientID,sensorID) -> None:
 
         self.bn = "marta/ParkinsonHelper/"
         self.patientID=patientID
-        self.sensorID = "pressure"+str(sensorID)
-        self.structure = {"bn": self.bn+str(patientID)+"/pressure"+str(sensorID),
+        self.sensorID = "pressure"+str(patientID)
+        self.structure = {"bn": self.bn+str(patientID)+"/pressure"+str(patientID),
                 "e":
                     [
                         {
@@ -48,7 +47,7 @@ class PressureSimulator():
 
         DeviceInf = {
 	        "DeviceID" : self.sensorID,
-	        "deviceName" : "Pressure Sensor "+str(sensorID),
+	        "deviceName" : "Pressure Sensor "+str(self.patientID),
 	        "measureType":"FeetPressure",
             "availableServices":"MQTT",
             "servicedetails": "To be defined"

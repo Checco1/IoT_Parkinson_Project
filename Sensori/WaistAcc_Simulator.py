@@ -5,13 +5,13 @@ import time
 
 class WaistSimulator():
 
-    def __init__(self,patientID,sensorID) -> None:
+    def __init__(self,patientID) -> None:
 
         self.bn = "marta/ParkinsonHelper/"
         self.patientID=patientID
-        self.sensorID = "waist_acc"+str(sensorID)
+        self.sensorID = "waist_acc"+str(patientID)
 
-        self.structure = {"bn": self.bn+str(patientID)+"/waist_acc"+str(sensorID),
+        self.structure = {"bn": self.bn+str(patientID)+"/waist_acc"+str(patientID),
                 "e":
                     [
                         {
@@ -48,7 +48,7 @@ class WaistSimulator():
 
         DeviceInf = {
 	        "DeviceID" : self.sensorID,
-	        "deviceName" : "Waist Accelerometer "+str(sensorID),
+	        "deviceName" : "Waist Accelerometer "+str(self.patientID),
 	        "measureType":"TimeLastPeak",
             "availableServices":"MQTT",
             "servicedetails": "To be defined"
