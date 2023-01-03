@@ -92,6 +92,5 @@ if __name__ == "__main__":
     patientID = input ("Insert patient's ID: ")
     data=RetrieveData(patientID,patientID)
     data.ReadTXT()
-    #data.PlotGraphs()
-    data.SendData()
+    data.SendData() #this has to be translated in MQTT
 
