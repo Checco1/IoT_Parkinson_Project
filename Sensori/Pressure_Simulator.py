@@ -6,6 +6,7 @@ import json
 
 class PressureSimulator():
 
+    def __init__(self,patientID) -> None:
 
         self.bn = "marta/ParkinsonHelper/"
         self.patientID=patientID
