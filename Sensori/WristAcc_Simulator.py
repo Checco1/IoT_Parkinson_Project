@@ -43,6 +43,17 @@ class WristSimulator():
 
         return self.structure
 
+    def Information(self):
+
+        DeviceInf = {
+	        "DeviceID" : self.sensorID,
+	        "deviceName" : "Wrist Accelerometer "+str(sensorID),
+	        "measureType":"MeanFrequencyAcceleration",
+            "availableServices":"MQTT",
+            "servicedetails": "To be defined"
+        }
+        return DeviceInf
+
 
 if __name__ == "__main__":
 

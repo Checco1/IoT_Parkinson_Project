@@ -43,6 +43,17 @@ class WaistSimulator():
 
         return self.structure
 
+    def Information(self):
+
+        DeviceInf = {
+	        "DeviceID" : self.sensorID,
+	        "deviceName" : "Waist Accelerometer "+str(sensorID),
+	        "measureType":"TimeLastPeak",
+            "availableServices":"MQTT",
+            "servicedetails": "To be defined"
+        }
+        return DeviceInf
+
 
 if __name__ == "__main__":
 
