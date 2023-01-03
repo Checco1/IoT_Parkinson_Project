@@ -54,36 +54,3 @@ class PressureSimulator():
             "servicedetails": "To be defined"
         }
         return DeviceInf
-
-
-if __name__ == "__main__":
-
-    patientID = input("Insert patient's ID: ")
-    sensorID = patientID
-    weight = 75
-    sensor=PressureSimulator(patientID,sensorID)
-    
-    my_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(time.time())))
-
-    res = sensor.Information()
-    print(json.dumps(res)) 
-    print(my_time)
-
-  #  print("Insert which situation you want to simulate: ")
-  #  print("- Freezing")
-  #  print("- Falling")
-  #  print("- Tremor")
-  #  situation = input("--> ")
-  #
-  #  if situation == "Freezing" or situation == "Tremor":
-  #      risultato = sensor.StandingGenerator(weight)
-  #      print("Pressure: "+str(risultato))
-  #  elif situation == "Fall":
-  #      risultato = sensor.LyingGenerator()
-  #      print("Pressure: "+str(risultato))
-  #  else:
-  #      print("Wrong simulation name: retry")
-
-
-
-

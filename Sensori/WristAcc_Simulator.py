@@ -9,6 +9,7 @@ class WristSimulator():
 
         self.bn = "marta/ParkinsonHelper/"
         self.patientID=patientID
+        self.sensorID = "wrist_acc"+str(sensorID)
 
         self.structure = {"bn": self.bn+str(patientID)+"/wrist_acc"+str(sensorID),
                 "e":
@@ -53,28 +54,5 @@ class WristSimulator():
             "servicedetails": "To be defined"
         }
         return DeviceInf
-
-
-if __name__ == "__main__":
-
-    patientID = input("Insert patient's ID: ")
-    sensorID = patientID
-    sensor=WristSimulator(patientID,sensorID)
-    print("Insert which situation you want to simulate: ")
-    print("- Freezing")
-    print("- Falling")
-    print("- Tremor")
-    situation = input("--> ")
-
-    if situation == "Freezing" or situation == "Falling":
-        risultato = sensor.NormalWristGenerator()
-        print("Wrist accelerometer: "+str(risultato))
-    elif situation == "Tremor":
-        risultato = sensor.TremorGenerator()
-        print("Wrist accelerometer: "+str(risultato))
-    else:
-        print("Wrong simulation name: retry")
-
-    
 
 

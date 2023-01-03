@@ -9,6 +9,7 @@ class WaistSimulator():
 
         self.bn = "marta/ParkinsonHelper/"
         self.patientID=patientID
+        self.sensorID = "waist_acc"+str(sensorID)
 
         self.structure = {"bn": self.bn+str(patientID)+"/waist_acc"+str(sensorID),
                 "e":
@@ -53,28 +54,3 @@ class WaistSimulator():
             "servicedetails": "To be defined"
         }
         return DeviceInf
-
-
-if __name__ == "__main__":
-
-    patientID = input("Insert patient's ID: ")
-    sensorID = patientID
-    sensor=WaistSimulator(patientID,sensorID)
-    print("Insert which situation you want to simulate: ")
-    print("- Freezing")
-    print("- Falling")
-    print("- Tremor")
-    situation = input("--> ")
-
-    if situation == "Tremor":
-        risultato = sensor.NormalWalkGenerator()
-        print("Waist accelerometer: "+str(risultato))
-    elif situation == "Freezing" or situation == "Fall":
-        risultato = sensor.StopGenerator()
-        print("Waist accelerometer: "+str(risultato))
-    else:
-        print("Wrong simulation name: retry")
-
-    
-
-
