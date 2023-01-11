@@ -1,17 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+from MyMQTT import *
 
 class RetrieveData():
 
-    def __init__(self,patientID,sensorID):
+    def __init__(self, patientID,broker,port,baseTopic):
 
-        self.pressure=[]
-        self.wrist_acc=[]
-        self.waist_acc=[]
-
-        self.bn = "marta/ParkinsonHelper/"
-        self.message={"bn": self.bn+str(patientID)+"/pressure"+str(sensorID),
+        self.baseTopic=baseTopic+'/'+str(patientID)
+        self.client = MyMQTT("DeviceConnector",broker,port,None)
+        self.message={"bn": "",
                 "e":
                     [
                         {
@@ -24,11 +22,15 @@ class RetrieveData():
 
         }
 
+        self.pressure=[]
+        self.wrist_acc=[]
+        self.waist_acc=[]
+        self.patientID = patientID
 
     def ReadTXT(self):
-        f_p = open("pressure.txt","r")
-        f_waist = open("waist_acc.txt","r")
-        f_wrist = open("wrist_acc.txt","r")
+        f_p = open("pressure"+str(self.patientID)+".txt","r")
+        f_waist = open("waist_acc"+str(self.patientID)+".txt","r")
+        f_wrist = open("wrist_acc"+str(self.patientID)+".txt","r")
 
         for line in f_p:
             self.pressure.append(float(line.strip('\n')))
@@ -64,33 +66,53 @@ class RetrieveData():
         plt.tight_layout()
         plt.show()
 
+    def start(self):
+        self.client.start()
+
+    def stop(self):
+        self.client.stop()
+
     def SendData(self):
         for i in range(len(self.waist_acc)):
 
+            self.message["bn"]="/waist_acc"+str(self.patientID)
             self.message["e"][0]["measureType"] = "TimeLastPeak"
             self.message["e"][0]["unit"] = "s"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.waist_acc[i])
-            print(self.message)
+            self.topic=self.baseTopic+self.message["bn"]
+            self.client.myPublish(self.topic,self.message)
 
+            self.message["bn"]="/wrist_acc"+str(self.patientID)
             self.message["e"][0]["measureType"] = "MeanFrequencyAcceleration"
             self.message["e"][0]["unit"] = "Hz"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.wrist_acc[i])
-            print(self.message)
+            self.topic=self.baseTopic+self.message["bn"]
+            self.client.myPublish(self.topic,self.message)
 
+            self.message["bn"]="/pressure"+str(self.patientID)
             self.message["e"][0]["measureType"] = "FeetPressure"
             self.message["e"][0]["unit"] = "kg"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.pressure[i])
-            print(self.message)
+            self.topic=self.baseTopic+self.message["bn"]
+            self.client.myPublish(self.topic,self.message)
             time.sleep(2)
+            print("Published!")
         
 
 if __name__ == "__main__":
     
+    conf=json.load(open("settings.json"))
     patientID = input ("Insert patient's ID: ")
-    data=RetrieveData(patientID,patientID)
+    broker = conf["broker"]
+    port = conf["port"]
+    baseTopic = conf["baseTopic"]
+    data=RetrieveData(patientID,broker,port,baseTopic)
     data.ReadTXT()
-    data.SendData() #this has to be translated in MQTT
+    data.start()
+    data.SendData()
+    data.stop()
+
 
