@@ -57,7 +57,7 @@ class RetrieveData():
             self.message["e"][0]["unit"] = "s"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.waist_acc[i])
-            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient1/waist_acc1
+            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient2/waist_acc1
             self.client.myPublish(self.topic,self.message)
 
             self.message["bn"]="/wrist_acc"+str(self.patientID)
@@ -65,7 +65,7 @@ class RetrieveData():
             self.message["e"][0]["unit"] = "Hz"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.wrist_acc[i])
-            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient1/wrist_acc1
+            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient2/wrist_acc1
             self.client.myPublish(self.topic,self.message)
 
             self.message["bn"]="/pressure"+str(self.patientID)
@@ -73,7 +73,7 @@ class RetrieveData():
             self.message["e"][0]["unit"] = "kg"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.pressure[i])
-            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient1/pressure1
+            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient2/pressure1
             self.client.myPublish(self.topic,self.message)
             time.sleep(2)
             print("Published!")
