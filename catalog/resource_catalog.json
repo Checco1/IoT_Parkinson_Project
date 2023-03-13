@@ -1,7 +1,7 @@
 {
   "patients_list": [
     {
-      "patientID": 1,
+      "patientID": "p_1",
       "device_list": [
         {
           "deviceID": "waist_acc1",
