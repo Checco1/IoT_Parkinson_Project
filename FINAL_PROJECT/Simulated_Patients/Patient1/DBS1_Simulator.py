@@ -32,7 +32,7 @@ if __name__ == "__main__":
     port = conf["port"]
     patientID = 1
     baseTopic = conf["baseTopic"]
-    topic = baseTopic+"/patient"+str(patientID)+"7dbs_activation"
+    topic = baseTopic+"/patient"+str(patientID)+"/dbs_activation"
     dbs1=DBS("DBS1", topic, broker, port)
     dbs1.start()
 

@@ -2,6 +2,39 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from MyMQTT import *
+import cherrypy
+import requests
+
+class Registering():
+    exposed = True
+    def __init__(self, url) -> None:
+        self.url = url
+
+    def UpdateSensors(self):
+        #do something for the registration in the RegisterCatalog
+        post={
+            "waist_acc1": "active",
+            "wrist_acc1": "active",
+            "pressure1": "active",
+            "lastUpdate": time.time()
+        }
+        requests.post(self.url, post)
+        pass
+
+class RetrievePatientInfo():
+    exposed = True
+    def __init__(self, url):
+        self.url = url
+
+    def GetTopic(self,patientID): #localhost:8080/get_topics/patient1
+        request=self.url+"/get_topics/patient"+str(patientID)
+        response = requests.get(request)
+        return(response.json())
+    
+    def GetSettings(self): #to get broker and port
+        request=self.url+"/get_settings"
+        response = requests.get(request)
+        return(response.json())
 
 class RetrieveData():
 
@@ -80,13 +113,19 @@ class RetrieveData():
         
 
 if __name__ == "__main__":
-    
-    conf=json.load(open("settings.json"))
+
+    #### URL MUST NOT BE THERE ####
+
+    register=Registering("http://localhost:8080")
+    register.UpdateSensors()
     patientID = 1
-    broker = conf["broker"]
-    port = conf["port"]
-    baseTopic = conf["baseTopic"]+'/patient'+str(patientID)
-    data=RetrieveData(patientID,broker,port,baseTopic)
+    info=RetrievePatientInfo("http://localhost:8080")
+    topics=info.GetTopic(patientID)
+    settings=info.GetSettings()
+    broker = settings["broker"]
+    port = int(settings["port"])
+
+    data=RetrieveData(patientID,broker,port,topics)
     data.ReadTXT()
     data.start()
     data.SendData()

@@ -6,7 +6,7 @@
     {
       "patientName": "Michael Scott",
       "patientID": 1,
-      "device_list": [
+      "deviceList": [
         {
           "deviceID": "waist_acc1",
           "measureType": "TimeLastPeak",
@@ -85,7 +85,7 @@
     {
       "patientName": "Dwight Schrute",
       "patientID": 2,
-      "device_list": [
+      "deviceList": [
         {
           "deviceID": "waist_acc2",
           "measureType": "TimeLastPeak",
