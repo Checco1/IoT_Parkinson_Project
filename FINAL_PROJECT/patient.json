@@ -1,152 +1,163 @@
 {
-    "patients_list":[
+  "patientList":
+  [
+    {
+      "patientName": "Michael Scott",
+      "patientID": 1,
+      "device_list": [
         {
-            "patientName": "Michael Scott",
-            "patientID":1,
-            "device_list":[
-                "waist_acc1",
-                "wrist_acc1",
-                "pressure1"
-            ]
+          "deviceID": "waist_acc1",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/waist_acc1"
+            }
+          ]
         },
         {
-            "patientName": "Dwight Schrute",
-            "patientID":2,
-            "device_list":[
-                "waist_acc2",
-                "wrist_acc2",
-                "pressure2"
-            ]
-        }
-
-    ],
-    "device_list":[
+          "deviceID": "wrist_acc1",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/wrist_acc1"
+            }
+          ]
+        },
         {
-            "deviceID": "waist_acc1",
-            "measureType": [
-              "TimeLastPeak"
-            ],
-            "unit":[
-                "s"
-            ],
-            "availableServices": [
-              "MQTT"
-            ],
-            "servicesDetails": [
-              {
-                "serviceType": "MQTT",
-                "topic": [
-                  "ParkinsonHelper/patient1/waist_acc1"
-                ]
-              }
-            ],
-            "lastUpdate": ""
-          },
-          {
-            "deviceID": "wrist_acc1",
-            "measureType": [
-              "MeanFrequency"
-            ],
-            "unit":[
-                "Hz"
-            ],
-            "availableServices": [
-              "MQTT"
-            ],
-            "servicesDetails": [
-              {
-                "serviceType": "MQTT",
-                "topic": [
-                  "ParkinsonHelper/patient1/wrist_acc1"
-                ]
-              }
-            ],
-            "lastUpdate": ""
-          },
-          {
-            "deviceID": "pressure1",
-            "measureType": [
-              "FeetPressure"
-            ],
-            "unit":[
-                "kg"
-            ],
-            "availableServices": [
-              "MQTT"
-            ],
-            "servicesDetails": [
-              {
-                "serviceType": "MQTT",
-                "topic": [
-                  "ParkinsonHelper/patient1/pressure1"
-                ]
-              }
-            ],
-            "lastUpdate": ""
-          },
-          {
-            "deviceID": "waist_acc2",
-            "measureType": [
-              "TimeLastPeak"
-            ],
-            "unit":[
-                "s"
-            ],
-            "availableServices": [
-              "MQTT"
-            ],
-            "servicesDetails": [
-              {
-                "serviceType": "MQTT",
-                "topic": [
-                  "ParkinsonHelper/patient2/waist_acc2"
-                ]
-              }
-            ],
-            "lastUpdate": ""
-          },
-          {
-            "deviceID": "wrist_acc2",
-            "measureType": [
-              "MeanFrequency"
-            ],
-            "unit":[
-                "Hz"
-            ],
-            "availableServices": [
-              "MQTT"
-            ],
-            "servicesDetails": [
-              {
-                "serviceType": "MQTT",
-                "topic": [
-                  "ParkinsonHelper/patient2/wrist_acc2"
-                ]
-              }
-            ],
-            "lastUpdate": ""
-          },
-          {
-            "deviceID": "pressure2",
-            "measureType": [
-              "FeetPressure"
-            ],
-            "unit":[
-                "kg"
-            ],
-            "availableServices": [
-              "MQTT"
-            ],
-            "servicesDetails": [
-              {
-                "serviceType": "MQTT",
-                "topic": [
-                  "ParkinsonHelper/patient2/pressure2"
-                ]
-              }
-            ],
-            "lastUpdate": ""
-          }
+          "deviceID": "pressure1",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/pressure1"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs1",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/actuators/tremor"
+            }
+          ]
+        },
+        {
+          "deviceID": "soundfeedback1",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/actuators/freezing"
+            }
+          ]
+        }
+      ],
+      "Statistic_services":[
+        {
+          "ServiceName": "TeleBot",
+          "token":"boh",
+          "topic":"ParkinsonHelper/patient1/actuators/fall"
 
-    ]
+        },
+        {
+          "ServiceName": "ThingSpeak",
+          "token":"boh",
+          "topic":[
+            "ParkinsonHelper/patient1/actuators/statistics",
+            "ParkinsonHelper/patient1/actuators/fall",
+            "ParkinsonHelper/patient1/actuators/freezing",
+            "ParkinsonHelper/patient1/actuators/tremor"
+          ]
+        }
+      ]
+    },
+    {
+      "patientName": "Dwight Schrute",
+      "patientID": 2,
+      "device_list": [
+        {
+          "deviceID": "waist_acc2",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/sensors/waist_acc2"
+            }
+          ]
+        },
+        {
+          "deviceID": "wrist_acc2",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/sensors/wrist_acc2"
+            }
+          ]
+        },
+        {
+          "deviceID": "pressure2",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/sensors/pressure2"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs2",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/actuators/tremor"
+            }
+          ]
+        },
+        {
+          "deviceID": "soundfeedback2",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/actuators/freezing"
+            }
+          ]
+        }
+      ],
+      "Statistic_services":[
+        {
+          "ServiceName": "TeleBot",
+          "token":"boh",
+          "topic":"ParkinsonHelper/patient2/actuators/fall"
+
+        },
+        {
+          "ServiceName": "ThingSpeak",
+          "token":"boh",
+          "topic":[
+            "ParkinsonHelper/patient2/actuators/statistics",
+            "ParkinsonHelper/patient2/actuators/fall",
+            "ParkinsonHelper/patient2/actuators/freezing",
+            "ParkinsonHelper/patient2/actuators/tremor"
+          ]
+        }
+      ]
+    }
+  ]
 }
