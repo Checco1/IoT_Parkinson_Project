@@ -9,6 +9,7 @@
       "device_list": [
         {
           "deviceID": "waist_acc1",
+          "deviceType": "sensor",
           "measureType": "TimeLastPeak",
           "unit": "s",
           "Services": [
@@ -20,6 +21,7 @@
         },
         {
           "deviceID": "wrist_acc1",
+          "deviceType": "sensor",
           "measureType": "MeanFrequency",
           "unit": "Hz",
           "Services": [
@@ -31,6 +33,7 @@
         },
         {
           "deviceID": "pressure1",
+          "deviceType": "sensor",
           "measureType": "FeetPressure",
           "unit": "kg",
           "Services": [
@@ -42,6 +45,7 @@
         },
         {
           "deviceID": "dbs1",
+          "deviceType": "actuator",
           "measureType": "Activation",
           "unit": "bool",
           "Services": [
@@ -53,6 +57,7 @@
         },
         {
           "deviceID": "soundfeedback1",
+          "deviceType": "actuator",
           "measureType": "Activation",
           "unit": "bool",
           "Services": [
@@ -88,6 +93,7 @@
       "device_list": [
         {
           "deviceID": "waist_acc2",
+          "deviceType": "sensor",
           "measureType": "TimeLastPeak",
           "unit": "s",
           "Services": [
@@ -99,6 +105,7 @@
         },
         {
           "deviceID": "wrist_acc2",
+          "deviceType": "sensor",
           "measureType": "MeanFrequency",
           "unit": "Hz",
           "Services": [
@@ -110,6 +117,7 @@
         },
         {
           "deviceID": "pressure2",
+          "deviceType": "sensor",
           "measureType": "FeetPressure",
           "unit": "kg",
           "Services": [
@@ -121,6 +129,7 @@
         },
         {
           "deviceID": "dbs2",
+          "deviceType": "actuator",
           "measureType": "Activation",
           "unit": "bool",
           "Services": [
@@ -132,6 +141,7 @@
         },
         {
           "deviceID": "soundfeedback2",
+          "deviceType": "actuator",
           "measureType": "Activation",
           "unit": "bool",
           "Services": [
