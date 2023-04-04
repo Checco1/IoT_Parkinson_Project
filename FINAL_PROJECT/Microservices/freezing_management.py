@@ -6,7 +6,11 @@
 import time
 import paho.mqtt.client as PahoMQTT
 import json
+from info_provider import *
+import requests
 
+
+# MQTT connection class
 class freezing_management():
 
     def __init__ (self, patientID, port, broker, topic):
@@ -18,9 +22,10 @@ class freezing_management():
         self._paho_mqtt = PahoMQTT.Client(self.clientID, True)
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
+        self.sensor_id = "def"
 
 
-        self.bn = "marta/ParkinsonHelper/" + self.clientID
+        self.bn = "ParkinsonHelper/" + self.clientID
 
         self.structure = {"bn": self.bn +"/freezing_manager",
                 "e":
@@ -40,6 +45,8 @@ class freezing_management():
 
     def MyOnMessage(self, paho_mqtt, user_data, msg):
         sensor_info = json.loads(msg.payload)
+        # I want to identify who is the patient who has sent this, idk if i can identify it with the bn
+        self.sensor_id = sensor_info["bn"]
         if(sensor_info["e"][0]["n"] == "TimeLastPeak"):
             waist_time = sensor_info["e"][0]["v"]
             self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
@@ -70,18 +77,29 @@ class freezing_management():
 
 if __name__ == "__main__":
 
-    clientID = 'freezing_manager147852369'
+    microserviceID = 'freezing147852' 
     port = 1883
     broker = 'mqtt.eclipseprojects.io'
-    waist_topic = '/sensors/waist_acc'
-    actuators_topic = '/actuators/freezing'
+    actuators_topic = '/actuators/freezing' # Removing
 
-    #start of MQTT connection
-    tm = freezing_management(clientID, port, broker, waist_topic)
-    actuators = freezing_management(clientID, port, broker, actuators_topic)
+    # Get the dictionary with all the clients and their sensors
+    sensor_topics= requests.get('localhost:8080/get_topics/sensor/patient1')
+    waist_topic_args = sensor_topics["waist_acc"].split('/')
+    waist_topic = waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/'+waist_topic_args[3]
+    print(waist_topic)
+
+    # --------MQTT subscriber communication-----------
+    tm = freezing_management(microserviceID, port, broker, waist_topic)
     tm.start()
     tm.subscriber()
     
+    
+    # Get the dictionary with all the clients and their actuators
+    # We should get the patient depending on the callback
+    actuator_topics= requests.get('localhost:9090/get_topics/actuator/###/soundfeedback')
+    print(actuator_topics)
+    actuators = freezing_management(microserviceID, port, broker, actuators_topic)
+
     # Creation of the MQTT message to send to the actuators
     while True:
         time.sleep(2)
