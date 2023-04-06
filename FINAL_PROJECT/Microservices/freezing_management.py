@@ -78,15 +78,31 @@ class freezing_management():
 if __name__ == "__main__":
 
     microserviceID = 'freezing147852' 
+    nclients = 2 #This is just to try
     port = 1883
     broker = 'mqtt.eclipseprojects.io'
     actuators_topic = '/actuators/freezing' # Removing
+    
+    waist_topic = []
+
+    # Get info about port and broker
+
+
+
 
     # Get the dictionary with all the clients and their sensors
-    sensor_topics= requests.get('localhost:8080/get_topics/sensor/patient1')
-    waist_topic_args = sensor_topics["waist_acc"].split('/')
-    waist_topic = waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/'+waist_topic_args[3]
-    print(waist_topic)
+    for i in range(1, nclients):
+        uri = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
+        sensor_topics= requests.get(uri).json()
+        waist_topic_args = sensor_topics["waist_acc"+str(i)].split('/')
+        waist_topic.append(waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/'+waist_topic_args[3])
+
+    # Get the dictionary with all the clients and their actuators
+    #for i in range(1, nclients):
+    #    uri = 'http://localhost:9090/get_topics/actuator/patient' + str(i) + '/soundfeedback'
+    #    actuators_topics= requests.get(uri).json()
+    #    soundfeedback_topic_args = actuators_topics["soundfeedback"+str(i)].split('/')
+    #    soundfeedback_topic.append(soundfeedback_topic_args[0]+'/+/'+soundfeedback_topic_args[2]+'/'+soundfeedback_topic_args[3])
 
     # --------MQTT subscriber communication-----------
     tm = freezing_management(microserviceID, port, broker, waist_topic)
@@ -96,8 +112,6 @@ if __name__ == "__main__":
     
     # Get the dictionary with all the clients and their actuators
     # We should get the patient depending on the callback
-    actuator_topics= requests.get('localhost:9090/get_topics/actuator/###/soundfeedback')
-    print(actuator_topics)
     actuators = freezing_management(microserviceID, port, broker, actuators_topic)
 
     # Creation of the MQTT message to send to the actuators
