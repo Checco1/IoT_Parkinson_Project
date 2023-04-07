@@ -2,43 +2,11 @@
   "patients_list": [
     {
       "patientID": "p_1",
-      "device_list": [
-        {
-          "deviceID": "waist_acc1",
-          "topic": "ParkinsonHelper/patient1/waist_acc1",
-          "lastUpdate": 1563870919.6437185
-        },
-        {
-          "deviceID": "wrist_acc1",
-          "topic": "ParkinsonHelper/patient1/wrist_acc1",
-          "lastUpdate": 1563870919.6437185
-        },
-        {
-          "deviceID": "pressure1",
-          "topic": "ParkinsonHelper/patient1/pressure1",
-          "lastUpdate": 1563870919.6437185
-        }
-      ]
+      "device_list": []
     },
     {
       "patientID": 2,
-      "device_list": [
-        {
-          "deviceID": "waist_acc1",
-          "topic": "ParkinsonHelper/patient1/waist_acc1",
-          "lastUpdate": 1563870919.6437185
-        },
-        {
-          "deviceID": "wrist_acc1",
-          "topic": "ParkinsonHelper/patient1/wrist_acc1",
-          "lastUpdate": 1563870919.6437185
-        },
-        {
-          "deviceID": "pressure1",
-          "topic": "ParkinsonHelper/patient1/pressure1",
-          "lastUpdate": 1563870919.6437185
-        }
-      ]
+      "device_list": []
     },
     {
       "patientID": 3,

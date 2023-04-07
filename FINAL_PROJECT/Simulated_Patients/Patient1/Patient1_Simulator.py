@@ -10,14 +10,68 @@ class Registering():
     def __init__(self, url) -> None:
         self.url = url
 
-    def UpdateSensors(self):
-        #do something for the registration in the RegisterCatalog
+    def CreatePatient(self):
+        #Registering in patient.json and in resource_catalog.json
         post={
-            "waist_acc1": "active",
-            "wrist_acc1": "active",
-            "pressure1": "active",
-            "lastUpdate": time.time()
-        }
+            "patientName": "Michael Scott",
+            "patientID": "p_1",
+            "deviceList": [
+              {
+                "deviceID": "waist_acc1",
+                "deviceType": "sensor",
+                "measureType": "TimeLastPeak",
+                "unit": "s",
+                "Services": [
+                  {
+                    "serviceType": "MQTT",
+                    "topic": "ParkinsonHelper/patient1/sensors/waist_acc1"
+                  }
+                ]
+              },
+              {
+                "deviceID": "wrist_acc1",
+                "deviceType": "sensor",
+                "measureType": "MeanFrequency",
+                "unit": "Hz",
+                "Services": [
+                  {
+                    "serviceType": "MQTT",
+                    "topic": "ParkinsonHelper/patient1/sensors/wrist_acc1"
+                  }
+                ]
+              },
+              {
+                "deviceID": "pressure1",
+                "deviceType": "sensor",
+                "measureType": "FeetPressure",
+                "unit": "kg",
+                "Services": [
+                  {
+                    "serviceType": "MQTT",
+                    "topic": "ParkinsonHelper/patient1/sensors/pressure1"
+                  }
+                ]
+              }
+            ],
+            "Statistic_services":[
+              {
+                "ServiceName": "TeleBot",
+                "token":"boh",
+                "topic":"ParkinsonHelper/patient1/actuators/fall"
+
+              },
+              {
+                "ServiceName": "ThingSpeak",
+                "token":"boh",
+                "topic":[
+                  "ParkinsonHelper/patient1/actuators/statistics",
+                  "ParkinsonHelper/patient1/actuators/fall",
+                  "ParkinsonHelper/patient1/actuators/freezing",
+                  "ParkinsonHelper/patient1/actuators/tremor"
+                ]
+              }
+            ]
+          }
         requests.post(self.url, post)
         pass
 
@@ -26,22 +80,30 @@ class RetrievePatientInfo():
     def __init__(self, url):
         self.url = url
 
-    def GetTopic(self,patientID): #localhost:8080/get_topics/sensor/patient1
-        request=self.url+"/get_topics/sensor/patient"+str(patientID)
+    def GetTopic(self,patientID): #localhost:8080/info/p_1
+        self.topics={}
+        request=self.url+"/info/p_"+str(patientID)
         response = requests.get(request)
-        return(response.json())
+        response_json=response.json()
+        for device in response_json["devices"]:
+            if device["deviceType"]=="sensor":
+              for service in device["Services"]:
+                  if service["serviceType"] == "MQTT":
+                      self.topics.update({str(device["deviceID"]):str(service["topic"])})
+                
+        return(self.topics)
     
     def GetSettings(self): #to get broker and port
-        request=self.url+"/get_settings"
+        request=self.url+"/broker"
         response = requests.get(request)
         return(response.json())
 
-class RetrieveData():
+class SensorSimulator():
 
     def __init__(self, patientID,broker,port,topics):
 
-        self.topics=topics
-        self.publish_topic= ""
+        self.topics=topics #dictionary of topics
+        self.publish_topic= "" #topic in use
         self.client = MyMQTT("DeviceConnector",broker,port,None)
         self.message={"bn": "",
                 "e":
@@ -77,11 +139,11 @@ class RetrieveData():
         f_waist.close()
         f_wrist.close()
 
-    def start(self):
-        self.client.start()
-
-    def stop(self):
-        self.client.stop()
+    #def start(self):
+    #    self.client.start()
+#
+    #def stop(self):
+    #    self.client.stop()
 
     def SendData(self):
         for i in range(len(self.waist_acc)):
@@ -118,25 +180,28 @@ class RetrieveData():
 
 if __name__ == "__main__":
 
-    #### URL MUST NOT BE THERE ####
-
+    #Registration in patient.json and in register_catalog.json
     register=Registering("http://localhost:8080")
     #register.UpdateSensors()
+
+    #Retrieve MQTT info (topics and settings) from patient.json
     patientID = 1
     info=RetrievePatientInfo("http://localhost:8080")
     topics=info.GetTopic(patientID)
     settings=info.GetSettings()
-    broker = settings["broker"]
-    port = int(settings["port"])
+    broker = settings["IP"]
+    port = int(settings["mqtt_port"])
 
-    print("Topic: ", topics)
-    print("Broker: ", broker)
-    print("Port: ", port)
-
-    data=RetrieveData(patientID,broker,port,topics)
+    #Retrieve data and publish them
+    data=SensorSimulator(patientID,broker,port,topics)
     data.ReadTXT()
-    data.start()
+    data.client.start()
     data.SendData()
-    data.stop()
+
+    #End of the service
+    data.client.unsubscribe(topics["waist_acc1"])
+    data.client.unsubscribe(topics["wrist_acc1"])
+    data.client.unsubscribe(topics["pressure1"])
+    data.client.stop()
 
 
