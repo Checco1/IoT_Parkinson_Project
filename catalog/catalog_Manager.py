@@ -10,6 +10,7 @@ from pathlib import Path
 P = Path(__file__).parent.absolute()
 SERVICE_CATALOG = P / 'service_catalog.json'
 RESUORCE_CATALOG = P / 'resource_catalog.json'
+PATIENT_CATALOG = P / '../FINAL_PROJECT/patient.json'
 CHERRY_CONF = str(P / 'cherrypyconfig')
 MAXDELAY = 300
 
@@ -17,6 +18,7 @@ class Catalog(object):
     def __init__(self):
         self.filename_service = SERVICE_CATALOG
         self.filename_resource = RESUORCE_CATALOG
+        self.filename_patient = PATIENT_CATALOG
     
     def load_file(self):
         """Load service and resource parts of catalog.
@@ -30,6 +32,8 @@ class Catalog(object):
                     self.service = json.loads(fs.read())
                 with open(self.filename_resource, "r") as fd:
                     self.resource = json.loads(fd.read())
+                with open(self.filename_patient, "r") as fp:
+                    self.patient = json.loads(fp.read())    
                 loaded = 1
             except Exception:
                 print("Problem in loading catalogs, retrying...")
@@ -50,13 +54,19 @@ class Catalog(object):
             json.dump(self.resource, fd, ensure_ascii=False, indent=2)
             fd.write("\n")
 
+    def write_patient(self):
+        """Write data on patient json file."""
+        with open(self.filename_patient, "w") as fd:
+            json.dump(self.patient, fd, ensure_ascii=False, indent=2)
+            fd.write("\n")
+
     def add_patient(self, patient_json):
         # patient_json will be the body in the POST method
         # Look at the existing patient IDs.
         self.load_file()
         list_id = []
 
-        for p in self.service["patients_list"]:
+        for p in self.patient["patients_list"]:
             list_id.append(p["patientID"])
 
         # Generate a new patientID starting from 1 and taking the first free
@@ -73,13 +83,14 @@ class Catalog(object):
         patient_json["patientID"] = new_id
         print(patient_json)
 
-        self.service["patients_list"].append(patient_json)
+        self.patient["patients_list"].append(patient_json)
         patient_res_json = {
             "patientID": patient_json["patientID"],
             "device_list": []
         }
         self.resource["patients_list"].append(patient_res_json)
-        self.write_service()
+        #self.write_service()
+        self.write_patient()
         self.write_resource()
 
     def add_device(self, device_json):
@@ -90,12 +101,12 @@ class Catalog(object):
         list_id = []
 
         # Generate list of all deviceID
-        for p in self.service["patients_list"]:
+        for p in self.patient["patients_list"]:
             for d in p["device_list"]:
                 list_id.append(d["deviceID"])
 
         # Find specific patient device in service and resource jsons.
-        for p in self.service["patients_list"]:
+        for p in self.patient["patients_list"]:
             if p["patientID"] == device_json["patientID"]:
                 break
 
@@ -126,13 +137,14 @@ class Catalog(object):
         }
         pres["device_list"].append(device_res_json)
 
-        self.write_service()
+        #self.write_service()
+        self.write_patient()
         self.write_resource()
 
     def info(self, ID):
         """Return all information about a patient/device" given an ID."""
         self.load_file()
-        for p in self.service["patients_list"]:
+        for p in self.patient["patients_list"]:
             if p["patientID"] == ID:
                 info = {"patientID": ID, "name": p["patientName"],"devices": p["device_list"]}
                 return info
@@ -170,12 +182,12 @@ class Catalog(object):
         # But first check if device is allowed from the static catalog.
             allowed = 0
 
-            for p2 in self.service["patients_list"]:
+            for p2 in self.patient["patients_list"]:
                 if p2['patientID'] == patientID:
                     break
 
             for d2 in p2['device_list']:
-                if d2['deviceID'] == deviceID:  # In Service JSON
+                if d2['deviceID'] == deviceID:  # In Patient JSON
                     allowed = 1
                     print("%s reconnected!" % deviceID)
                     p['device_list'].append(data)  # In Resource JSON
@@ -224,15 +236,19 @@ class Webserver(object):
         if uri[0] == 'ts':
             return cat.service["thingspeak"]
 
-        # Get resource catalog json.
+        # Get Resource catalog json.
         if uri[0] == 'resource':
             return cat.resource
 
-        # Get service catalog json.
+        # Get Service catalog json.
         if uri[0] == 'service':
             return cat.service
+        
+        # Get Patient catolog json
+        if uri[0] == 'patient':
+            return cat.patient
 
-        # Get all information about a patient/plant/device.
+        # Get all information about a patient/device.
         if uri[0] == 'info':
             ID = uri[1]
             return cat.info(ID)
