@@ -8,15 +8,18 @@
 import time
 import paho.mqtt.client as PahoMQTT
 import json
+from info_provider import *
+import requests
 
 class fall_management():
     
-    def __init__ (self, patientID, port, broker, topic):
+    def __init__ (self, patientID, port, broker, topic, actuators_topic):
 
         self.clientID = str(patientID)
         self.port = port
         self.broker = broker
         self.topic = topic
+        self.actuators_topic = actuators_topic
         self._paho_mqtt = PahoMQTT.Client(self.clientID, True)
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
@@ -65,12 +68,15 @@ class fall_management():
         self._paho_mqtt.loop_start()
 
     def subscriber(self):
-        self._paho_mqtt.subscribe(self.topic, 2)
-        print('Subscribed to' + self.topic)
+        topics = []
+        for i in range(len(self.topic)):
+            topics.append((self.topic[i],2))
+        self._paho_mqtt.subscribe(topics)
+        #print('Subscribed to' + self.topic)
 
     def publisher(self, msg):
-        self._paho_mqtt.publish(self.topic, msg, 2)
-        print("published: " + str(msg))
+        self._paho_mqtt.publish(self.actuators_topic, msg, 2)
+        print("published: " + str(msg) + " on " + self.actuators_topic)
 
     def stop(self):
         self._paho_mqtt.unsubscribe(self.topic)
@@ -79,46 +85,44 @@ class fall_management():
 
 if __name__ == "__main__":
 
-    clientID1 = 'tremor_manager1478523691'
-    clientID2 = 'tremor_manager1478523692'
-    clientID3 = 'tremor_manager1478523693'
-    port = 1883
-    broker = 'mqtt.eclipseprojects.io'
-    waist_topic = '/sensors/waist_acc'
-    pressure_topic = '/sensors/pressure'
-    actuators_topic = '/actuators/fall'
+    microserviceID = 'fall147852' 
+    nclients = 2 ######### WE SHOULD HAVE A SETTING DESCRIBING HOW MANY CLIENTS DO WE HAVE
 
-    #start of MQTT connection
-    waist_fm = fall_management(clientID1, port, broker, waist_topic)
-    pressure_fm = fall_management(clientID2, port, broker, pressure_topic)
-    actuators = fall_management(clientID3, port, broker, actuators_topic)
+    waist_topic = []
+    pressure_topic = []
+    actuators_topic = []
+    tm = []
 
-    waist_fm.start()
-    pressure_fm.start()
-    actuators.start()
+    # Get info about port and broker
+    uri_settings = 'http://localhost:9090/get_settings'
+    settings = requests.get(uri_settings).json()
+    port = settings["port"]
+    broker = settings["broker"]
 
-    waist_fm.subscriber()
-    pressure_fm.subscriber()
-    
+    # Get the dictionary with all the clients and their sensors and actuators
+    for i in range(1, nclients+1):
+        # get client's sensors 
+        uri_sensor = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
+        sensor_topics= requests.get(uri_sensor).json()
+        waist_topic_args = sensor_topics["waist_acc"+str(i)].split('/')
+        waist_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/'+waist_topic_args[3]
+        ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
+
+        pressure_topic_args = sensor_topics["pressure"+str(i)].split('/')
+        pressure_topic =pressure_topic_args[0]+'/+/'+pressure_topic_args[2]+'/'+pressure_topic_args[3]
+
+        sensors = [waist_topic, pressure_topic]
+        # get client's actuators
+        uri_actuators = 'http://localhost:9090/get_topics/Statistic_services/patient' + str(i)
+        actuators_topics= requests.get(uri_actuators).json()["TeleBot"]
+        
+        # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+        tm.append(fall_management(microserviceID, port, broker, sensors, actuators_topics))
+        tm[i-1].start()
+        tm[i-1].subscriber()
+
+    # Creation of the MQTT message to send to the actuators
     while True:
         time.sleep(2)
-        if (waist_fm.structure["e"][0]["v"] == 1) and (pressure_fm.structure["e"][0]["v"] == 1):
-            fall_flag = 1
-        else:
-            fall_flag = 0
-
-        msg = {"bn": waist_fm.bn +"/fall_manager",
-                "e":
-                    [
-                        {
-                            "n":"fall_manager",
-                            "u":"bool",
-                            "t":time.time(),
-                            "v":fall_flag,
-                        }
-                    ]
-        }
-        # MQTT to communicate with telebot and statistics manager
-        actuators.publisher(json.dumps(msg))
-
-    
+        for i in range(len(tm)):
+            tm[i].publisher(json.dumps(tm[i].structure))

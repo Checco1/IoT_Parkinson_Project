@@ -9,6 +9,10 @@ import json
 import numpy as np
 from numpy_ringbuffer import RingBuffer
 
+from info_provider import *
+import requests
+
+
 class statistics_management():
     
     def __init__ (self, patientID, port, broker, topic, actuators_topic):
@@ -17,7 +21,7 @@ class statistics_management():
         self.port = port
         self.broker = broker
         self.topic = topic
-        self.publish_topic = actuators_topic
+        self.actuators_topic = actuators_topic
         self._paho_mqtt = PahoMQTT.Client(self.clientID, True)
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
@@ -82,16 +86,55 @@ class statistics_management():
         print('Subscribed to' + self.topic)
 
     def publisher(self, msg):
-        self._paho_mqtt.publish(self.publish_topic, msg, 2)
-        print("published: " + str(msg))
+        self._paho_mqtt.publish(self.actuators_topic, msg, 2)
+        print("published: " + str(msg) + " on " + self.actuators_topic)
 
     def stop(self):
         self._paho_mqtt.unsubscribe(self.topic)
         self._paho_mqtt.loop_stop()
         self._paho_mqtt.disconnect()
 
-if __name__ == "__main__":
+    
 
+if __name__ == "__main__":
+    microserviceID = 'stats147852' 
+    nclients = 2 ######### WE SHOULD HAVE A SETTING DESCRIBING HOW MANY CLIENTS DO WE HAVE
+
+    sensors = []
+    tm = []
+
+     # Get info about port and broker
+    uri_settings = 'http://localhost:9090/get_settings'
+    settings = requests.get(uri_settings).json()
+    port = settings["port"]
+    broker = settings["broker"]
+
+    # Get the dictionary with all the clients and their sensors and actuators
+    for i in range(1, nclients+1):
+        # get client's sensors 
+        uri_sensor = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
+        sensor_topics= requests.get(uri_sensor).json()
+        topic_args = sensor_topics["waist_acc"+str(i)].split('/')
+        sensors =topic_args[0]+'/'+topic_args[1]+'/'+topic_args[2]+'/'+ '#'
+        ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
+
+        # get client's actuators
+        uri_actuators = 'http://localhost:9090/get_topics/Statistic_services/patient' + str(i)
+        actuators_topics= requests.get(uri_actuators).json()["ThingSpeak"].strip('][').split(', ')[0]
+        
+        # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+        tm.append(statistics_management(microserviceID, port, broker, sensors, actuators_topics))
+        tm[i-1].start()
+        tm[i-1].subscriber()
+
+    # Creation of the MQTT message to send to the actuators
+    while True:
+        time.sleep(2)
+        for i in range(len(tm)):
+            tm[i].publisher(json.dumps(tm[i].structure))
+   
+
+    ###### OLD ####3
     clientID1 = 'stats_manager1478523691'
     clientID2 = 'stats_manager1478523692'
     clientID3 = 'stats_manager1478523693'

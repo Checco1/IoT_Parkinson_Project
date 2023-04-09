@@ -6,15 +6,18 @@
 import time
 import paho.mqtt.client as PahoMQTT
 import json
+from info_provider import *
+import requests
 
 class tremor_management():
 
-    def __init__ (self, patientID, port, broker, topic):
+    def __init__ (self, patientID, port, broker, topic, actuators_topic):
 
         self.clientID = str(patientID)
         self.port = port
         self.broker = broker
         self.topic = topic
+        self.actuators_topic = actuators_topic
         self._paho_mqtt = PahoMQTT.Client(self.clientID, True)
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
@@ -61,8 +64,8 @@ class tremor_management():
         print('Subscribed to' + self.topic)
 
     def publisher(self, msg):
-        self._paho_mqtt.publish(self.topic, msg, 2)
-        #print("published: " + str(msg))
+        self._paho_mqtt.publish(self.actuators_topic, msg, 2)
+        print("published: " + str(msg) + " on " + self.actuators_topic)
 
     def stop(self):
         self._paho_mqtt.unsubscribe(self.topic)
@@ -72,25 +75,38 @@ class tremor_management():
 
 if __name__ == "__main__":
 
-    clientID = 'tremor_manager147852369'
-    port = 1883
-    broker = 'mqtt.eclipseprojects.io'
-    wrist_topic = '/sensors/wrist_acc'
-    actuators_topic = '/actuators/tremor'
-   
+    microserviceID = 'tremor147852' 
+    nclients = 2 ######### WE SHOULD HAVE A SETTING DESCRIBING HOW MANY CLIENTS DO WE HAVE
 
-    #start of MQTT connection
-    tm = tremor_management(clientID, port, broker, wrist_topic)
-    actuators = tremor_management(clientID, port, broker, actuators_topic)
-    tm.start()
-    tm.subscriber()
-    
-    #telebot_sender.start()
-    #thingspeak_sender.start()
+    wrist_topic = []
+    tm = []
+
+    # Get info about port and broker
+    uri_settings = 'http://localhost:9090/get_settings'
+    settings = requests.get(uri_settings).json()
+    port = settings["port"]
+    broker = settings["broker"]
+
+    # Get the dictionary with all the clients and their sensors and actuators
+    for i in range(1, nclients+1):
+        # get client's sensors 
+        uri_sensor = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
+        sensor_topics= requests.get(uri_sensor).json()
+        wrist_topic_args = sensor_topics["wrist_acc"+str(i)].split('/')
+        wrist_topic =wrist_topic_args[0]+'/+/'+wrist_topic_args[2]+'/'+wrist_topic_args[3]
+        ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
+
+        # get client's actuators
+        uri_actuators = 'http://localhost:9090/get_topics/actuator/patient' + str(i) + '/soundfeedback'
+        actuators_topics= requests.get(uri_actuators).json()["soundfeedback"+str(i)]
+        
+        # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+        tm.append(tremor_management(microserviceID, port, broker, wrist_topic, actuators_topics))
+        tm[i-1].start()
+        tm[i-1].subscriber()
+
     # Creation of the MQTT message to send to the actuators
-
     while True:
         time.sleep(2)
-        actuators.publisher(json.dumps(tm.structure))
-
-        
+        for i in range(len(tm)):
+            tm[i].publisher(json.dumps(tm[i].structure))
