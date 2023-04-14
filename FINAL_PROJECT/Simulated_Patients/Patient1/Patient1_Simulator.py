@@ -51,6 +51,30 @@ class Registering():
                     "topic": "ParkinsonHelper/patient1/sensors/pressure1"
                   }
                 ]
+              },
+              {
+                "deviceID": "dbs1",
+                "deviceType": "actuator",
+                "measureType": "Activation",
+                "unit": "bool",
+                "Services": [
+                  {
+                    "serviceType": "MQTT",
+                    "topic": "ParkinsonHelper/patient1/actuators/tremor"
+                  }
+                ]
+              },
+              {
+                "deviceID": "soundfeedback1",
+                "deviceType": "actuator",
+                "measureType": "Activation",
+                "unit": "bool",
+                "Services": [
+                  {
+                    "serviceType": "MQTT",
+                    "topic": "ParkinsonHelper/patient1/actuators/freezing"
+                  }
+                ]
               }
             ],
             "Statistic_services":[
@@ -104,7 +128,7 @@ class SensorSimulator():
 
         self.topics=topics #dictionary of topics
         self.publish_topic= "" #topic in use
-        self.client = MyMQTT("DeviceConnector",broker,port,None)
+        self.client = MyMQTT("SensorSimulator",broker,port,None)
         self.message={"bn": "",
                 "e":
                     [
@@ -191,6 +215,8 @@ if __name__ == "__main__":
     settings=info.GetSettings()
     broker = settings["IP"]
     port = int(settings["mqtt_port"])
+
+    print(topics)
 
     #Retrieve data and publish them
     data=SensorSimulator(patientID,broker,port,topics)

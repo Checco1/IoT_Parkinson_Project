@@ -1,11 +1,11 @@
 {
   "broker":"test.mosquitto.org",
   "port": 1883,
-  "patientList":
+  "patients_list":
   [
     {
       "patientName": "Michael Scott",
-      "patientID": 1,
+      "patientID": "p_1",
       "device_list": [
         {
           "deviceID": "waist_acc1",
@@ -89,7 +89,7 @@
     },
     {
       "patientName": "Dwight Schrute",
-      "patientID": 2,
+      "patientID": "p_2",
       "device_list": [
         {
           "deviceID": "waist_acc2",
@@ -170,6 +170,34 @@
           ]
         }
       ]
+    }
+  ],
+  "Service_list":
+  [
+    {
+      "Service_name":"Freezing_Management",
+      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
+      "PublishTopic":"ParkinsonHelper/PATIENT_ID/actuators/freezing"
+    },
+    {
+      "Service_name":"Fall_Management",
+      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
+      "PublishTopic":"ParkinsonHelper/PATIENT_ID/actuators/fall"
+    },
+    {
+      "Service_name":"Tremon_Management",
+      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
+      "PublishTopic":"ParkinsonHelper/PATIENT_ID/actuators/tremor"
+    },
+    {
+      "Service_name":"Statistic_Management",
+      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
+      "PublishTopic":"ParkinsonHelper/PATIENT_ID/actuators/statistics"
+    },
+    {
+      "Service_name":"ThingSpeak_adaptor",
+      "SubscribeTopic":"ParkinsonHelper/+/actuators/#",
+      "PublishTopic": ""
     }
   ]
 }

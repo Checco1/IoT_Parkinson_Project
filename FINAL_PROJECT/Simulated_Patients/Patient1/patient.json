@@ -1,12 +1,12 @@
 {
   "broker":"test.mosquitto.org",
   "port": 1883,
-  "patientList":
+  "patients_list":
   [
     {
       "patientName": "Michael Scott",
       "patientID": "p_1",
-      "deviceList": [
+      "device_list": [
         {
           "deviceID": "waist_acc1",
           "deviceType": "sensor",
@@ -90,7 +90,7 @@
     {
       "patientName": "Dwight Schrute",
       "patientID": "p_2",
-      "deviceList": [
+      "device_list": [
         {
           "deviceID": "waist_acc2",
           "deviceType": "sensor",

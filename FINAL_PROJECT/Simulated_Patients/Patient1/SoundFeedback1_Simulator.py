@@ -40,52 +40,43 @@ class RetrievePatientInfo():
         response = requests.get(request)
         return(response.json())
 
-class DBSSimulator():
+class SFSimulator():
     def __init__(self, dbsID, topic, broker, port):
         self.dbsID = dbsID
         self.topic=topic
-        self.client = MyMQTT("DBS1",broker,port,self)
-        self.dbs_activation = False
-
-    #def start(self):
-    #    self.client.start()
-    #    self.client.mySubscribe(self.topic)
-#
-    #def stop(self):
-    #    self.client.stop()
+        self.client = MyMQTT("SoundFeedback1",broker,port,self)
+        self.sf_activation = False
 
     def notify(self, topic, msg):
         d = json.loads(msg)
         client = d["bn"]
-        if self.dbs_activation == True:
-            print("DBS for patient 1 already activated!")
+        if self.sf_activation == True:
+            print("SF for patient 1 already activated!")
         else:
-            self.dbs_activation= True
+            self.sf_activation= True
             print(f"The microservice has started the activation with the topic {topic}")
             self.t_activation=time.time()
 
 if __name__ == "__main__":
 
     #Initialization
-    print("The actuator DBS1 is not active")
+    print("The actuator SoundFeedback1 is not active")
 
     #Retrieve MQTT info (topics and settings) from patient.json
     patientID = 1
     info=RetrievePatientInfo("http://localhost:8080")
-    topic=info.GetTopic(patientID)["dbs1"]
+    topic=info.GetTopic(patientID)["soundfeedback1"]
     settings=info.GetSettings()
     broker = settings["IP"]
     port = int(settings["mqtt_port"])
 
     #Start the simulator
-    dbs1=DBSSimulator("DBS1", topic, broker, port)
-    dbs1.client.start()
-    dbs1.client.mySubscribe(topic)
+    soundfeedback1=SFSimulator("soundfeedback1", topic, broker, port)
+    soundfeedback1.client.start()
+    soundfeedback1.client.mySubscribe(topic)
 
     while True:
-        if dbs1.dbs_activation==True:
-            if (dbs1.t_activation-time.time())>120:
-                dbs1.dbs_activation=False
-                #this condition simulate the deactivation of the DBS after
-                #a certain amount of time (in reality, it would be a larger
-                #range)
+        if soundfeedback1.sf_activation==True:
+            if (soundfeedback1.t_activation-time.time())>10:
+                soundfeedback1.sf_activation=False
+                #this condition simulate the deactivation of the SF after 10 seconds
