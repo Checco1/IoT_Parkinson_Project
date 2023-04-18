@@ -8,8 +8,6 @@ import paho.mqtt.client as PahoMQTT
 import json
 import numpy as np
 from numpy_ringbuffer import RingBuffer
-
-from info_provider import *
 import requests
 
 
@@ -32,10 +30,10 @@ class statistics_management():
                 "e":
                     [
                         {
-                            "n":"statistics_manager",
-                            "u":"[mean, std]",
-                            "t":"",
-                            "v":"",
+                            "measureType":"statistics_manager",
+                            "unit":"[mean, std]",
+                            "timeStamp":"",
+                            "value":"",
                         }
                     ]
         }
@@ -47,32 +45,42 @@ class statistics_management():
     def MyOnConnect(self, paho_mqtt, user_data, flags, rc):
             pass
 
+    # ============Send the whole buffer===================
     def MyOnMessage(self, paho_mqtt, user_data, msg):
         sensor_info = json.loads(msg.payload)
         #print(sensor_info)
-        if(sensor_info["e"][0]["n"] == "TimeLastPeak"):
-            waist_freq = sensor_info["e"][0]["v"]
+        if(sensor_info["e"][0]["measureType"] == "TimeLastPeak"):
+            waist_freq = sensor_info["e"][0]["value"]
             self.waist_buffer.append(waist_freq)
-            v = [np.mean(self.waist_buffer), np.std(self.waist_buffer)]
-            self.structure["e"][0]["n"] = "WaistAccStats"
-            self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
-            self.structure["e"][0]["v"] = v
+            v = {"mean" : np.mean(self.waist_buffer),
+                 "std" : np.std(self.waist_buffer),
+                 "measurements" : str(self.waist_buffer._arr)
+                 }
+            self.structure["e"][0]["measureType"] = "WaistAccStats"
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = v
 
-        elif(sensor_info["e"][0]["n"] == "MeanFrequencyAcceleration"):
-            wrist_freq = sensor_info["e"][0]["v"]
+        elif(sensor_info["e"][0]["measureType"] == "MeanFrequencyAcceleration"):
+            wrist_freq = sensor_info["e"][0]["value"]
             self.wrist_buffer.append(wrist_freq)
-            v = [np.mean(self.wrist_buffer), np.std(self.wrist_buffer)]
-            self.structure["e"][0]["n"] = "WristAccStats"
-            self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
-            self.structure["e"][0]["v"] = v
+            v = {"mean" : np.mean(self.wrist_buffer),
+                 "std" : np.std(self.wrist_buffer),
+                 "measurements" : str(self.wrist_buffer._arr)
+                 }
+            self.structure["e"][0]["measureType"] = "WristAccStats"
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = v
 
-        elif(sensor_info["e"][0]["n"] == "FeetPressure"):
-            pressure = sensor_info["e"][0]["v"]
+        elif(sensor_info["e"][0]["measureType"] == "FeetPressure"):
+            pressure = sensor_info["e"][0]["value"]
             self.pressure_buffer.append(pressure)
-            v = [np.mean(self.pressure_buffer), np.std(self.pressure_buffer)]
-            self.structure["e"][0]["n"] = "FeetPressureStats"
-            self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
-            self.structure["e"][0]["v"] = v
+            v = {"mean" : np.mean(self.pressure_buffer),
+                 "std" : np.std(self.pressure_buffer),
+                 "measurements" : str(self.pressure_buffer._arr)
+                 }
+            self.structure["e"][0]["measureType"] = "FeetPressureStats"
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = v
         
         self.publisher(json.dumps(self.structure))
         return self.structure
@@ -104,63 +112,38 @@ if __name__ == "__main__":
     tm = []
 
      # Get info about port and broker
-    uri_settings = 'http://localhost:9090/get_settings'
-    settings = requests.get(uri_settings).json()
-    port = settings["port"]
-    broker = settings["broker"]
+    uri_broker = 'http://localhost:80/broker'
+    settings = requests.get(uri_broker).json()
+    print(settings)
+    port = int(settings["mqtt_port"])
+    broker = settings["IP"]
 
     # Get the dictionary with all the clients and their sensors and actuators
-    for i in range(1, nclients+1):
-        # get client's sensors 
-        uri_sensor = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
-        sensor_topics= requests.get(uri_sensor).json()
-        topic_args = sensor_topics["waist_acc"+str(i)].split('/')
-        sensors =topic_args[0]+'/'+topic_args[1]+'/'+topic_args[2]+'/'+ '#'
-        ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
+    
+    # get client's sensors 
+    uri_sensor = 'http://localhost:80/info/p_1'
+    client_info= requests.get(uri_sensor).json()
+    waist_acc_ID = "waist_acc1"
 
-        # get client's actuators
-        uri_actuators = 'http://localhost:9090/get_topics/Statistic_services/patient' + str(i)
-        actuators_topics= requests.get(uri_actuators).json()["ThingSpeak"].strip('][').split(', ')[0]
-        
-        # Creating as many instances as clients, so they can comunicate with their corresponding actuator
-        tm.append(statistics_management(microserviceID, port, broker, sensors, actuators_topics))
-        tm[i-1].start()
-        tm[i-1].subscriber()
+    for d in range(len(client_info["devices"])):
+                if client_info["devices"][d]["deviceID"] == waist_acc_ID:
+                    waist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
+               
+    topic_args = waist_topic_p_1.split('/')
+    sensors =topic_args[0]+'/+/'+topic_args[2]+'/'+ '#'
+    ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
+
+    # get client's actuators
+    #==================ASK ABOUT THINGSPEAK'S URI=============
+    uri_actuators = 'http://localhost:80/ts'
+    actuators_topics = "/ParkinsonHelper/patient1/actuator/statistics"
+
+    # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+    tm = statistics_management(microserviceID, port, broker, sensors, actuators_topics)
+    tm.start()
+    tm.subscriber()
 
     # Creation of the MQTT message to send to the actuators
     while True:
-        time.sleep(2)
-        for i in range(len(tm)):
-            tm[i].publisher(json.dumps(tm[i].structure))
-   
-
-    ###### OLD ####3
-    clientID1 = 'stats_manager1478523691'
-    clientID2 = 'stats_manager1478523692'
-    clientID3 = 'stats_manager1478523693'
-    clientID4 = 'stats_manager1478523694'
-    port = 1883
-    broker = 'mqtt.eclipseprojects.io'
-    waist_topic = '/sensors/waist_acc'
-    wrist_topic = '/sensors/wrist_acc'
-    pressure_topic = '/sensors/pressure'
-    actuators_topic = '/actuators/statistics'
-
-    #start of MQTT connection
-    waist_sm = statistics_management(clientID1, port, broker, waist_topic, actuators_topic)
-    wrist_sm = statistics_management(clientID2, port, broker, wrist_topic, actuators_topic)
-    pressure_sm = statistics_management(clientID3, port, broker, pressure_topic, actuators_topic)
-
-    waist_sm.start()
-    wrist_sm.start()
-    pressure_sm.start()
-
-    waist_sm.subscriber()
-    wrist_sm.subscriber()
-    pressure_sm.subscriber()
-    
-    while True:
         pass
-
-
-    
+   

@@ -8,7 +8,6 @@
 import time
 import paho.mqtt.client as PahoMQTT
 import json
-from info_provider import *
 import requests
 
 
@@ -28,16 +27,16 @@ class freezing_management():
         self.sensor_id = "def"
 
 
-        self.bn = "ParkinsonHelper/" + self.clientID
+        self.bn = "ParkinsonHelper/"
 
         self.structure = {"bn": self.bn +"/freezing_manager",
                 "e":
                     [
                         {
-                            "n": "freezing_manager",
-                            "u":"bool",
-                            "t":time.time(),
-                            "v": 0,
+                            "measureType": "freezing_manager",
+                            "unit":"bool",
+                            "timeStamp":time.time(),
+                            "value": 0,
                         }
                     ]
 
@@ -48,17 +47,17 @@ class freezing_management():
 
     def MyOnMessage(self, paho_mqtt, user_data, msg):
         sensor_info = json.loads(msg.payload)
-        # I want to identify who is the patient who has sent this, idk if i can identify it with the bn
+        print(sensor_info)
         self.sensor_id = sensor_info["bn"]
-        if(sensor_info["e"][0]["n"] == "TimeLastPeak"):
-            waist_time = sensor_info["e"][0]["v"]
-            self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
-            self.structure["e"][0]["v"] = 0
+        if(sensor_info["e"][0]["measureType"] == "TimeLastPeak"):
+            waist_time = sensor_info["e"][0]["value"]
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = 0
             if (waist_time >= 1.69) and (waist_time <= 1.71):
-                self.structure["e"][0]["v"] = 1
-                print ("Freezing situation at " + str(sensor_info["e"][0]["t"]) + "s")
+                self.structure["e"][0]["value"] = 1
+                print ("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                self.publisher(json.dumps(self.structure))
 
-        self.publisher(json.dumps(tm.structure))
         return self.structure
 
     def start(self):
@@ -82,38 +81,40 @@ class freezing_management():
 if __name__ == "__main__":
 
     microserviceID = 'freezing147852' 
-    nclients = 2 ######### WE SHOULD HAVE A SETTING DESCRIBING HOW MANY CLIENTS DO WE HAVE
 
     waist_topic = []
     actuators_topics = []
-    tm = []
 
     # Get info about port and broker
-    uri_settings = 'http://localhost:9090/get_settings'
-    settings = requests.get(uri_settings).json()
-    port = settings["port"]
-    broker = settings["broker"]
+    uri_broker = 'http://localhost:80/broker'
+    settings = requests.get(uri_broker).json()
+    port = int(settings["mqtt_port"])
+    broker = settings["IP"]
 
     # Get the dictionary with all the clients and their sensors and actuators
-    for i in range(1, nclients+1):
-        # get client's sensors 
-        uri_sensor = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
-        sensor_topics= requests.get(uri_sensor).json()
-        waist_topic_args = sensor_topics["waist_acc"+str(i)].split('/')
-        waist_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/'+waist_topic_args[3]
-        # get client's actuators
-        uri_actuators = 'http://localhost:9090/get_topics/actuator/patient' + str(i) + '/dbs'
-        actuators_topics= requests.get(uri_actuators).json()["dbs"+str(i)]
-        
-        # Creating as many instances as clients, so they can comunicate with their corresponding actuator
-        tm.append(freezing_management(microserviceID, port, broker, waist_topic, actuators_topics))
-        tm[i-1].start()
-        tm[i-1].subscriber()
+    
+    # get client's sensors 
+    uri_sensor = 'http://localhost:80/info/p_1' 
+    client_info= requests.get(uri_sensor).json()
+    waist_acc_ID = "waist_acc1"
+    soundfeedback_ID = "soundfeedback1"
+    for d in range(len(client_info["devices"])):
+                if client_info["devices"][d]["deviceID"] == waist_acc_ID:
+                    waist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
+                if client_info["devices"][d]["deviceID"] == soundfeedback_ID:
+                    soundfeedback_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
+
+
+    waist_topic_args = waist_topic_p_1.split('/')
+    waist_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/#'
+
+    # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+    tm = freezing_management(microserviceID, port, broker, waist_topic, soundfeedback_topic_p_1)
+    tm.start()
+    tm.subscriber()
 
     # Creation of the MQTT message to send to the actuators
     while True:
-        time.sleep(2)
-        for i in range(len(tm)):
-            tm[i].publisher(json.dumps(tm[i].structure))
+        pass
 
         
