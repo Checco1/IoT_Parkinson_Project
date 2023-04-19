@@ -8,7 +8,6 @@
 import time
 import paho.mqtt.client as PahoMQTT
 import json
-from info_provider import *
 import requests
 
 class fall_management():
@@ -24,19 +23,21 @@ class fall_management():
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
 
-        self.bn = "marta/ParkinsonHelper/" + self.clientID
+        self.bn = "/ParkinsonHelper/" 
 
         self.structure = {"bn": self.bn +"/fall_manager",
                 "e":
                     [
                         {
-                            "n":"fall_manager",
-                            "u":"bool",
-                            "t":"",
-                            "v":"",
+                            "measureType":"fall_manager",
+                            "unit":"bool",
+                            "timeStamp":"",
+                            "value":"",
                         }
                     ]
         }
+        self.flag_waist = 0
+        self.flag_pressure = 0
 
     def MyOnConnect(self, paho_mqtt, user_data, flags, rc):
             pass
@@ -44,23 +45,32 @@ class fall_management():
     def MyOnMessage(self, paho_mqtt, user_data, msg):
         sensor_info = json.loads(msg.payload)
         print(sensor_info)
-        if(sensor_info["e"][0]["n"] == "TimeLastPeak"):
-            waist_freq = sensor_info["e"][0]["v"]
-            self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
-            self.structure["e"][0]["v"] = 0
+        self.bn = ["/ParkinsonHelper/fall_manager/"  + sensor_info["bn"]]
+        
+        if(sensor_info["e"][0]["measureType"] == "TimeLastPeak"):
+            waist_freq = sensor_info["e"][0]["value"]
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = 0
             if (waist_freq >= 1.69) and (waist_freq <= 1.71):
-                self.structure["e"][0]["v"] = 1
-                print ("Stop at " + str(sensor_info["e"][0]["t"]) + "s")
+                self.structure["e"][0]["value"] = 1
+                print ("Stop at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                self.flag_waist = 1
 
-        elif(sensor_info["e"][0]["n"] == "FeetPressure"):
-            pressure = sensor_info["e"][0]["v"]
-            self.structure["e"][0]["t"] = sensor_info["e"][0]["t"]
-            self.structure["e"][0]["v"] = 0
+        elif(sensor_info["e"][0]["measureType"] == "FeetPressure"):
+            pressure = sensor_info["e"][0]["value"]
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = 0
             if (pressure >= 4.9) and (pressure <= 5.1):
-                self.structure["e"][0]["v"] = 1
-                print ("Pressure lying at " + str(sensor_info["e"][0]["t"]) + "s")
-            
-        #print(str(self.structure))
+                self.structure["e"][0]["value"] = 1
+                print ("Pressure lying at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                self.flag_pressure = 1
+                 
+        if (self.flag_waist==1 and self.flag_pressure==1):
+            print("Fall situation at " + str(sensor_info["e"][0]["timeStamp"]))
+            self.publisher(json.dumps(self.structure))
+            self.flag_waist = 0
+            self.flag_pressure = 0
+
         return self.structure
 
     def start(self):
@@ -86,43 +96,47 @@ class fall_management():
 if __name__ == "__main__":
 
     microserviceID = 'fall147852' 
-    nclients = 2 ######### WE SHOULD HAVE A SETTING DESCRIBING HOW MANY CLIENTS DO WE HAVE
-
+    
     waist_topic = []
     pressure_topic = []
     actuators_topic = []
-    tm = []
 
     # Get info about port and broker
-    uri_settings = 'http://localhost:9090/get_settings'
-    settings = requests.get(uri_settings).json()
-    port = settings["port"]
-    broker = settings["broker"]
+    uri_broker = 'http://localhost:80/broker'
+    settings = requests.get(uri_broker).json()
+    print(settings)
+    port = int(settings["mqtt_port"])
+    broker = settings["IP"]
 
     # Get the dictionary with all the clients and their sensors and actuators
-    for i in range(1, nclients+1):
-        # get client's sensors 
-        uri_sensor = 'http://localhost:9090/get_topics/sensor/patient' + str(i) #
-        sensor_topics= requests.get(uri_sensor).json()
-        waist_topic_args = sensor_topics["waist_acc"+str(i)].split('/')
-        waist_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/'+waist_topic_args[3]
-        ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
+    
+    # get client's sensors 
+    uri_sensor = 'http://localhost:80/info/p_1' 
+    client_info= requests.get(uri_sensor).json()
+    waist_acc_ID = "waist_acc1"
+    pressure_ID = "pressure1"
+    for d in range(len(client_info["devices"])):
+                if client_info["devices"][d]["deviceID"] == waist_acc_ID:
+                    waist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
+                if client_info["devices"][d]["deviceID"] == pressure_ID:
+                    pressure_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
 
-        pressure_topic_args = sensor_topics["pressure"+str(i)].split('/')
-        pressure_topic =pressure_topic_args[0]+'/+/'+pressure_topic_args[2]+'/'+pressure_topic_args[3]
+    waist_topic_args = waist_topic_p_1.split('/')
+    waist_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/#'
+    pressure_topic_args = pressure_topic_p_1.split('/')
+    pressure_topic =pressure_topic_args[0]+'/+/'+pressure_topic_args[2]+'/#'
 
-        sensors = [waist_topic, pressure_topic]
-        # get client's actuators
-        uri_actuators = 'http://localhost:9090/get_topics/Statistic_services/patient' + str(i)
-        actuators_topics= requests.get(uri_actuators).json()["TeleBot"]
-        
-        # Creating as many instances as clients, so they can comunicate with their corresponding actuator
-        tm.append(fall_management(microserviceID, port, broker, sensors, actuators_topics))
-        tm[i-1].start()
-        tm[i-1].subscriber()
+    sensors = [waist_topic, pressure_topic]
+    # get client's actuators
+    #=================ASK ABOUT TELEBOT'S URI=============
+    #uri_actuators = 'http://localhost:80/get_topics/Statistic_services/patient1'
+    #actuators_topics= requests.get(uri_actuators).json()["TeleBot"]
+    actuators_topics = "/ParkinsonHelper/patient1/actuator/fall"
+    # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+    tm = fall_management(microserviceID, port, broker, sensors, actuators_topics)
+    tm.start()
+    tm.subscriber()
 
     # Creation of the MQTT message to send to the actuators
     while True:
-        time.sleep(2)
-        for i in range(len(tm)):
-            tm[i].publisher(json.dumps(tm[i].structure))
+        pass
