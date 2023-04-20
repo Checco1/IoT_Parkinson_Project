@@ -242,7 +242,7 @@ class Webserver(object):
 
         # Get Service catalog json.
         if uri[0] == 'service':
-            return cat.service
+            return cat.patient["Service_list"]
         
         # Get Patient catolog json
         if uri[0] == 'patient':
@@ -382,7 +382,7 @@ class Second(threading.Thread):
         cat = Catalog()
         cat.load_file()
         broker_ip = cat.broker_ip
-        topic = ""
+        topic = "ParkinsonHelper/*"
         sub = MySubscriber("Sub1", topic, broker_ip)
         sub.loop_flag = 1
         sub.start()
@@ -420,21 +420,21 @@ class Third(threading.Thread):
 
 def main():
     """Start all threads."""
-    thread1 = First(1, "CherryPy")
-    #thread2 = Second(2, "Updater")
-    thread3 = Third(3, "Remover")
+    #thread1 = First(1, "CherryPy")
+    thread2 = Second(2, "Updater")
+    #thread3 = Third(3, "Remover")
 
     print("> Starting CherryPy...")
-    thread1.start()
+    #thread1.start()
 
     time.sleep(1)
     print("\n> Starting MQTT device updater...")
-    #thread2.start()
+    thread2.start()
 
     time.sleep(1)
     print("\n> Starting remover...\nDelete old devices every %d seconds."
           % MAXDELAY)
-    thread3.start()
+    #thread3.start()
 
 if __name__ == '__main__':
     main()
