@@ -90,9 +90,8 @@ class MySubscriber(object):
         self._paho_mqtt.loop_stop()
         self._paho_mqtt.disconnect()
 
-    def my_on_connect(self,  rc):
-        print("S - Connected to %s - Result code: %d" % (self.messageBroker,
-                                                         rc))
+    def my_on_connect(self, rc,clientID, topic, broker_ip):
+        print("S - Connected to %s - Result code: %d" % (self.messageBroker,rc))
     
     def send_data(self):
         """Take data from database, empty the database, return data."""
@@ -215,8 +214,8 @@ def main ():
     thread1.start()
     thread2 = Timer(2, "Timer")
     thread2.start()
-    therad3= CherryThread(3, "Cherrypy")
-    therad3.start()
+    #therad3= CherryThread(3, "Cherrypy")
+    #therad3.start()
 
 if __name__== "__main__":
     
