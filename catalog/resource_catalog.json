@@ -3,22 +3,6 @@
     {
       "patientID": "p_1",
       "device_list": []
-    },
-    {
-      "patientID": 2,
-      "device_list": []
-    },
-    {
-      "patientID": 3,
-      "device_list": []
-    },
-    {
-      "patientID": 4,
-      "device_list": []
-    },
-    {
-      "patientID": 5,
-      "device_list": []
     }
   ]
 }
