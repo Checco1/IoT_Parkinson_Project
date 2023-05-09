@@ -12,7 +12,7 @@ SERVICE_CATALOG = P / 'service_catalog.json'
 RESUORCE_CATALOG = P / 'resource_catalog.json'
 PATIENT_CATALOG = P / '../FINAL_PROJECT/patient.json'
 CHERRY_CONF = str(P / 'cherrypyconfig')
-MAXDELAY = 300
+MAXDELAY = 30
 
 class Catalog(object):
     def __init__(self):
@@ -76,7 +76,7 @@ class Catalog(object):
 
         while new_id in list_id:
             numID += 1
-            new_id = "p_"+str(numID)
+            new_id = "patient"+str(numID)
 
         patient_json["patientName"] = ""
         patient_json["device_list"] = []
@@ -181,11 +181,10 @@ class Catalog(object):
         if not found:  # Insert again the device
         # But first check if device is allowed from the static catalog.
             allowed = 0
-
             for p2 in self.patient["patients_list"]:
                 if p2['patientID'] == patientID:
                     break
-
+                
             for d2 in p2['device_list']:
                 if d2['deviceID'] == deviceID:  # In Patient JSON
                     allowed = 1
@@ -244,7 +243,7 @@ class Webserver(object):
         if uri[0] == 'service':
             return cat.patient["Service_list"]
         
-        # Get Patient catolog json
+        # Get Patients catolog json
         if uri[0] == 'patient':
             return cat.patient
 
@@ -330,15 +329,20 @@ class MySubscriber:
         message = json.loads(msg.payload)
         catalog = Catalog()
         devID = message['bn']
+        devID = devID.split('/')
+        print(message)
+        print("\n")
         try:
             for e in message['e']:
-                if e['n'] == 'alive' and e['v'] == 1:
-                    topic = e['topic']
+                if e['timeStamp'] > 0:
                     string = ('http://' + self.url + ':' + self.port +
-                              '/info/' + devID)
+                              '/info/' + devID[3])
                     info = json.loads(requests.get(string).text)
-                    patientID = info["patientID"]
+                    patientID = devID[1]
                     deviceID = info["deviceID"]
+                    for serv in info['Services']:
+                        topic = serv['topic']
+                    
                     catalog.update_device(patientID, deviceID, topic)
         except Exception:
             pass
@@ -382,7 +386,7 @@ class Second(threading.Thread):
         cat = Catalog()
         cat.load_file()
         broker_ip = cat.broker_ip
-        topic = "ParkinsonHelper/*"
+        topic = "ParkinsonHelper/#"
         sub = MySubscriber("Sub1", topic, broker_ip)
         sub.loop_flag = 1
         sub.start()
@@ -420,12 +424,12 @@ class Third(threading.Thread):
 
 def main():
     """Start all threads."""
-    #thread1 = First(1, "CherryPy")
+    thread1 = First(1, "CherryPy")
     thread2 = Second(2, "Updater")
-    #thread3 = Third(3, "Remover")
+    thread3 = Third(3, "Remover")
 
     print("> Starting CherryPy...")
-    #thread1.start()
+    thread1.start()
 
     time.sleep(1)
     print("\n> Starting MQTT device updater...")
@@ -434,7 +438,7 @@ def main():
     time.sleep(1)
     print("\n> Starting remover...\nDelete old devices every %d seconds."
           % MAXDELAY)
-    #thread3.start()
+    thread3.start()
 
 if __name__ == '__main__':
     main()

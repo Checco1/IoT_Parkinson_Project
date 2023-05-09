@@ -1,7 +1,7 @@
 {
   "patients_list": [
     {
-      "patientID": "p_1",
+      "patientID": "patient1",
       "device_list": []
     }
   ]

@@ -23,7 +23,7 @@ class fall_management():
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
 
-        self.bn = "/ParkinsonHelper/" 
+        self.bn = "ParkinsonHelper" 
 
         self.structure = {"bn": self.bn +"/fall_manager",
                 "e":
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     actuators_topic = []
 
     # Get info about port and broker
-    uri_broker = 'http://localhost:80/broker'
+    uri_broker = 'http://localhost:8080/broker'
     settings = requests.get(uri_broker).json()
     print(settings)
     port = int(settings["mqtt_port"])
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # Get the dictionary with all the clients and their sensors and actuators
     
     # get client's sensors 
-    uri_sensor = 'http://localhost:80/info/p_1' 
+    uri_sensor = 'http://localhost:8080/info/patient1' 
     client_info= requests.get(uri_sensor).json()
     waist_acc_ID = "waist_acc1"
     pressure_ID = "pressure1"
@@ -129,9 +129,9 @@ if __name__ == "__main__":
     sensors = [waist_topic, pressure_topic]
     # get client's actuators
     #=================ASK ABOUT TELEBOT'S URI=============
-    #uri_actuators = 'http://localhost:80/get_topics/Statistic_services/patient1'
+    #uri_actuators = 'http://localhost:8080/get_topics/Statistic_services/patient1'
     #actuators_topics= requests.get(uri_actuators).json()["TeleBot"]
-    actuators_topics = "/ParkinsonHelper/patient1/actuator/fall"
+    actuators_topics = "ParkinsonHelper/patient1/actuator/fall"
     # Creating as many instances as clients, so they can comunicate with their corresponding actuator
     tm = fall_management(microserviceID, port, broker, sensors, actuators_topics)
     tm.start()

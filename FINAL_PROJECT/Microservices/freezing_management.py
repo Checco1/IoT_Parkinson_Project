@@ -27,7 +27,7 @@ class freezing_management():
         self.sensor_id = "def"
 
 
-        self.bn = "ParkinsonHelper/"
+        self.bn = "ParkinsonHelper"
 
         self.structure = {"bn": self.bn +"/freezing_manager",
                 "e":
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     actuators_topics = []
 
     # Get info about port and broker
-    uri_broker = 'http://localhost:80/broker'
+    uri_broker = 'http://localhost:8080/broker'
     settings = requests.get(uri_broker).json()
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # Get the dictionary with all the clients and their sensors and actuators
     
     # get client's sensors 
-    uri_sensor = 'http://localhost:80/info/p_1' 
+    uri_sensor = 'http://localhost:8080/info/patient1' 
     client_info= requests.get(uri_sensor).json()
     waist_acc_ID = "waist_acc1"
     soundfeedback_ID = "soundfeedback1"
