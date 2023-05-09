@@ -3,7 +3,7 @@
   [
     {
       "patientName": "Michael Scott",
-      "patientID": "p_1",
+      "patientID": "patient1",
       "device_list": [
         {
           "deviceID": "waist_acc1",
@@ -93,7 +93,7 @@
     },
     {
       "patientName": "Dwight Schrute",
-      "patientID": "p_2",
+      "patientID": "patient2",
       "device_list": [
         {
           "deviceID": "waist_acc2",

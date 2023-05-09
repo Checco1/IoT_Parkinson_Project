@@ -106,7 +106,7 @@ class RetrievePatientInfo():
 
     def GetTopic(self,patientID): #localhost:8080/info/p_1
         self.topics={}
-        request=self.url+"/info/p_"+str(patientID)
+        request=self.url+"/info/patient"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
         for device in response_json["devices"]:

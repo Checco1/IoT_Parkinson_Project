@@ -22,7 +22,7 @@ class tremor_management():
         self._paho_mqtt.on_message = self.MyOnMessage
 
 
-        self.bn = "marta/ParkinsonHelper/" + self.clientID
+        self.bn = "ParkinsonHelper/" + self.clientID
 
         self.structure = {"bn": self.bn +"/tremor_manager",
                 "e":
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     # Get the dictionary with all the clients and their sensors and actuators
     # get client's sensors 
-    uri_sensor = 'http://localhost:80/info/p_1' 
+    uri_sensor = 'http://localhost:80/info/patient1' 
     client_info= requests.get(uri_sensor).json()
     wrist_acc_ID = "wrist_acc1"
     dbs_ID = "dbs1"
