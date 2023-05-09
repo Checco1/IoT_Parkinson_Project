@@ -91,8 +91,8 @@ class MySubscriber(object):
         self._paho_mqtt.disconnect()
 
     def my_on_connect(self, rc,clientID, topic, broker_ip):
-        print("S - Connected to %s - Result code: %d" % (self.messageBroker,rc))
-    
+        #print("S - Connected to  - Result code:" (self.messageBroker,rc))
+        pass
     def send_data(self):
         """Take data from database, empty the database, return data."""
         data = self.db.list_data
@@ -100,15 +100,15 @@ class MySubscriber(object):
         return data
 
 
-    def my_on_message_received(self, msg):
+    def my_on_message_received(self, msg,clientID, broker_ip):
         
         (self.url, self.port, self.topic, self.ts_url) = read_file(FILE)
         #read the message coming from the message_broker and upload data depending on the topic 
-        msg.payload = msg.payload.decode()
+        msg.payload = msg.payload.decode("utf-8")
         message = json.loads(msg.payload)
         print(message)
         Patient = message['bn']
-
+        print(Patient)
         # Ask catalog for patientID from patient
         #string = "http://" + self.url + ":" + self.port + "/info/" + Patient
         #info_d = json.loads(requests.get(string).text)
