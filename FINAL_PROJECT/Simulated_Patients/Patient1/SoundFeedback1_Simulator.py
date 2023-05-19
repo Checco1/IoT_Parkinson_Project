@@ -22,8 +22,8 @@ class RetrievePatientInfo():
     def __init__(self, url):
         self.url = url
 
-    def GetTopic(self,patientID): #localhost:8080/info/p_1
-        request=self.url+"/info/p_"+str(patientID)
+    def GetTopic(self,patientID): #localhost:8080/info/patient1
+        request=self.url+"/info/patient"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
         for device in response_json["devices"]:
@@ -48,7 +48,7 @@ class SFSimulator():
         self.client = MyMQTT("SF1",broker,port,self)
         self.sf_activation = False
         self.sf_timeUpdate = 0
-        self.message={"bn": "sf1_update",
+        self.message={"bn": "patient1/sf1",
                 "e":
                     [
                         {

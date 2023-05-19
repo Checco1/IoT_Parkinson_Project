@@ -24,13 +24,13 @@ class CreatePatient():
         requests.post(request, body)
         return self.name, self.code_f
 
-    def CreateDevices(self):
+    def CreateDevices(self, name, code_f):
         info = RetrievePatientInfo(self.url)
-        self.patientID = info.GetID(self.name, self.code_f)
+        self.patientID = info.GetID(name, code_f)
         numberID=self.patientID.replace("patient","")
         request = self.url+"/addd/"+str(self.patientID)
         
-        print(f"Adding devices for patient {self.name} with ID code {self.patientID}")
+        print(f"Adding devices for patient {name} with ID code {self.patientID}")
         correct = 0
         while correct == 0:
             print("Insert the name of the device to add.")

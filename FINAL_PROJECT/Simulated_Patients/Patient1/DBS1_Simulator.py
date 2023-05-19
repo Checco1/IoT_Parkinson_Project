@@ -10,8 +10,8 @@ class RetrievePatientInfo():
     def __init__(self, url):
         self.url = url
 
-    def GetTopic(self,patientID): #localhost:8080/info/p_1
-        request=self.url+"/info/p_"+str(patientID)
+    def GetTopic(self,patientID): #localhost:8080/info/patient1
+        request=self.url+"/info/patient"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
         for device in response_json["devices"]:
@@ -36,7 +36,7 @@ class DBSSimulator():
         self.client = MyMQTT("DBS1",broker,port,self)
         self.dbs_activation = False
         self.dbs_timeUpdate = 0
-        self.message={"bn": "dbs1_update",
+        self.message={"bn": "patient1/dbs1",
                 "e":
                     [
                         {
