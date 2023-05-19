@@ -24,7 +24,7 @@ class statistics_management():
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
 
-        self.bn = "marta/ParkinsonHelper/" + self.clientID
+        self.bn = "ParkinsonHelper/" + self.clientID
 
         self.structure = {"bn": self.bn +"/statistics_manager",
                 "e":
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     tm = []
 
      # Get info about port and broker
-    uri_broker = 'http://localhost:80/broker'
+    uri_broker = 'http://localhost:8080/broker'
     settings = requests.get(uri_broker).json()
     print(settings)
     port = int(settings["mqtt_port"])
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # Get the dictionary with all the clients and their sensors and actuators
     
     # get client's sensors 
-    uri_sensor = 'http://localhost:80/info/p_1'
+    uri_sensor = 'http://localhost:8080/info/patient1'
     client_info= requests.get(uri_sensor).json()
     waist_acc_ID = "waist_acc1"
 
@@ -135,8 +135,8 @@ if __name__ == "__main__":
 
     # get client's actuators
     #==================ASK ABOUT THINGSPEAK'S URI=============
-    uri_actuators = 'http://localhost:80/ts'
-    actuators_topics = "/ParkinsonHelper/patient1/actuator/statistics"
+    uri_actuators = 'http://localhost:8080/ts'
+    actuators_topics = "ParkinsonHelper/patient1/actuator/statistics"
 
     # Creating as many instances as clients, so they can comunicate with their corresponding actuator
     tm = statistics_management(microserviceID, port, broker, sensors, actuators_topics)
