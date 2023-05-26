@@ -17,6 +17,7 @@ class CreatePatient():
         request = self.url+"/addp"
         body = {
             "patientName": str(self.name),
+            "patientID": "",
             "patientDocument": str(self.code_f),
             "device_list": [],
             "Statistic_services":[]
@@ -61,7 +62,7 @@ class CreatePatient():
             res = input("Y/N: ")
 
         for device in range(len(listDevices)):
-            print("Creating the device...")
+            print(f"Creating the device {listDevices[device]}...")
             self.device= {
                 "deviceID": str(listDevices[device])+str(numberID),
                 "deviceType": deviceTypeList[device],
@@ -74,7 +75,7 @@ class CreatePatient():
                     "topic": "ParkinsonHelper/"+self.patientID+"/sensors/"+str(listDevices[device])+str(numberID)
                   }
             elif deviceTypeList[device] == "actuator":
-                if "dbs" in device:
+                if "dbs" in str(listDevices[device]):
                     {   
                         "serviceType": "MQTT",
                         "topic": {
@@ -82,7 +83,7 @@ class CreatePatient():
                             "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
                         }
                     }
-                if "sf" in device:
+                if "sf" in str(listDevices[device]):
                     {   
                         "serviceType": "MQTT",
                         "topic": {
@@ -103,7 +104,7 @@ class CreatePatient():
 
             print(self.device)
             requests.post(request,self.device)
-            print(f"Device {device} posted!")
+            print(f"Device {listDevices[device]} posted!")
 
     def CreateStatisticServices(self):
 

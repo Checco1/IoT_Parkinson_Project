@@ -86,8 +86,6 @@ if __name__ == "__main__":
     #Registration in patient.json and in register_catalog.json
     register=CreatePatient("http://localhost:8080")
     [name, code] = register.CreatePatient()
-    print(name)
-    print(code)
     register.CreateDevices(name, code)
     #
     ##Retrieve MQTT info (topics and settings) from patient.json
