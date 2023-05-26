@@ -18,9 +18,10 @@ class CreatePatient():
         body = {
             "patientName": str(self.name),
             "patientDocument": str(self.code_f),
-            "deviceList": [],
+            "device_list": [],
             "Statistic_services":[]
         }
+        body = json.dumps(body)
         requests.post(request, body)
         return self.name, self.code_f
 
