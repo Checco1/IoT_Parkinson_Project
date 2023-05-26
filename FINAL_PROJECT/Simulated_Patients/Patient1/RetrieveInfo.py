@@ -8,12 +8,12 @@ class RetrievePatientInfo():
 
     def GetID(self, name, code):
         self.ID=""
-        request = self.url+"/info"
+        request = self.url+"/patient"
         response = (requests.get(request)).json()
-        for patient in response:
+        for patient in response["patients_list"]:
             if patient["patientName"] == name and patient["patientDocument"] == code:
                 self.ID = patient["patientID"]
-        return self.ID 
+        return self.ID
 
     def GetTopic(self,patientID): #localhost:8080/info/patient1
         self.topics={}

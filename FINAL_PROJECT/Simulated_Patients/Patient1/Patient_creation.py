@@ -18,62 +18,88 @@ class CreatePatient():
         body = {
             "patientName": str(self.name),
             "patientDocument": str(self.code_f),
-            "deviceList": [],
+            "device_list": [],
             "Statistic_services":[]
         }
+        print(body)
         requests.post(request, body)
         return self.name, self.code_f
 
     def CreateDevices(self, name, code_f):
         info = RetrievePatientInfo(self.url)
         self.patientID = info.GetID(name, code_f)
+        print(self.patientID)
         numberID=self.patientID.replace("patient","")
         request = self.url+"/addd/"+str(self.patientID)
         
         print(f"Adding devices for patient {name} with ID code {self.patientID}")
-        correct = 0
-        while correct == 0:
-            print("Insert the name of the device to add.")
-            print("The devices: waist_acc, wrist_acc and pressure are mandatory.")
-            print("Separate them with a comma (,): ")
-            stringDevices = input("")
-            if "waist_acc" in stringDevices and "wrist_acc" in stringDevices and "pressure" in stringDevices:
-                correct = 1
-            else:
-                print("Devices waist_acc, wrist_acc and pressure not present or misspelled")
 
-        listDevices = stringDevices.split(",")
+        listDevices=["waist_acc","wrist_acc","pressure","dbs","sf"]
+        measureTypeList=["TimeLastPeak","MeanFrequency","FeetPressure","Activation","Activation"]
+        deviceTypeList=["sensor","sensor","sensor","actuator","actuator"]
+        unitList=["s","Hz","kg","bool","bool"]
 
-        for device in listDevices:
-            correct = 0
-            while correct == 0:
-                deviceType = input(f"Enter the type of device for {device} (sensor/actuator): ")
-                if deviceType == "sensor" or deviceType == "actuator":
-                    correct = 1
-                else:
-                    print("Device type must be 'sensor' or 'actuator'.")
-            measureType = input(f"Enter the type of measure for {device} (TimeLastPeak, MeanFrequenct, FeetPressure...): ")
-            unit = input(f"Enter the unit of the measurement for {device} (s, Hz, Kg): ")
+        print("Mandatory devices: waist_acc, wrist_acc, pressure, dbs and sf.")
+        print("Do you want to add other devices?")
+        res = input("Y/N: ")
+        while res == "Y" or res == "y":
+            print("Write the device's name: ")
+            deviceName = input("")
+            listDevices.append(deviceName)
+            print("Write the device's measure type (pressure, heart_rate...): ")
+            deviceMeasure = input("")
+            measureTypeList.append(deviceMeasure)
+            print("Write the device's type (sensor/actuator): ")
+            deviceType_inp = input("")
+            deviceTypeList.append(deviceType_inp)
+            print("Write the unit of the device's measurement (kg, bpm...): ")
+            unitDevice = input("")
+            unitList.append(unitDevice)
+
+            
+            print("Do you want to add new devices?")
+            res = input("Y/N: ")
+
+        for device in range(len(listDevices)):
             print("Creating the device...")
             self.device= {
-                "deviceID": str(device)+str(numberID),
-                "deviceType": deviceType,
-                "measureType": measureType,
-                "unit": unit
+                "deviceID": str(listDevices[device])+str(numberID),
+                "deviceType": deviceTypeList[device],
+                "measureType": measureTypeList[device],
+                "unit": unitList[device]
             }
-            if deviceType == "sensor":
+            if deviceTypeList[device] == "sensor":
                 self.device["Services"] = {
                     "serviceType": "MQTT",
-                    "topic": "ParkinsonHelper/"+self.patientID+"/sensors/waist_acc"+numberID
+                    "topic": "ParkinsonHelper/"+self.patientID+"/sensors/"+str(listDevices[device])+str(numberID)
                   }
-            elif deviceType == "actuator":
-                {   
-                      "serviceType": "MQTT",
-                      "topic": {
-                        "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/tremor",
-                        "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/dbs"+numberID
-                      }
-                }
+            elif deviceTypeList[device] == "actuator":
+                if "dbs" in device:
+                    {   
+                        "serviceType": "MQTT",
+                        "topic": {
+                            "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/tremor",
+                            "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
+                        }
+                    }
+                if "sf" in device:
+                    {   
+                        "serviceType": "MQTT",
+                        "topic": {
+                            "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/freezing",
+                            "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
+                        }
+                    }
+                else:
+                    print(f"Insert the topic to which the device {listDevices[device]} has to subscribe: ")
+                    topicDevice=input(f"ParkinsonHelper/{self.patientID}/")
+                    {   
+                        "serviceType": "MQTT",
+                        "topic": {
+                            "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/freezing",
+                            "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
+                        }
+                    }
 
             print(self.device)
             requests.post(request,self.device)

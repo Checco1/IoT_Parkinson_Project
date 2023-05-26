@@ -1,6 +1,5 @@
 {
-  "patients_list":
-  [
+  "patients_list": [
     {
       "patientName": "Michael Scott",
       "patientID": "patient1",
@@ -50,8 +49,8 @@
             {
               "serviceType": "MQTT",
               "topic": {
-                "activation" : "ParkinsonHelper/patient1/microservices/tremor",
-                "update_check" : "ParkinsonHelper/patient1/actuators/dbs1_activation"
+                "activation": "ParkinsonHelper/patient1/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient1/actuators/dbs1"
               }
             }
           ]
@@ -65,24 +64,23 @@
             {
               "serviceType": "MQTT",
               "topic": {
-                "activation" : "ParkinsonHelper/patient1/microservices/freezing",
-                "update_check" : "ParkinsonHelper/patient1/actuators/sf1_activation"
+                "activation": "ParkinsonHelper/patient1/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient1/actuators/sf1"
               }
             }
           ]
         }
       ],
-      "Statistic_services":[
+      "Statistic_services": [
         {
           "ServiceName": "TeleBot",
-          "token":"boh",
-          "topic":"ParkinsonHelper/patient1/microservices/fall"
-
+          "token": "boh",
+          "topic": "ParkinsonHelper/patient1/microservices/fall"
         },
         {
           "ServiceName": "ThingSpeak",
-          "token":"boh",
-          "topic":[
+          "token": "boh",
+          "topic": [
             "ParkinsonHelper/patient1/microservices/statistics",
             "ParkinsonHelper/patient1/microservices/fall",
             "ParkinsonHelper/patient1/microservices/freezing",
@@ -140,8 +138,8 @@
             {
               "serviceType": "MQTT",
               "topic": {
-                "activation" : "ParkinsonHelper/patient2/microservices/tremor",
-                "update_check" : "ParkinsonHelper/patient2/actuators/dbs2_activation"
+                "activation": "ParkinsonHelper/patient2/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient2/actuators/dbs2"
               }
             }
           ]
@@ -155,24 +153,23 @@
             {
               "serviceType": "MQTT",
               "topic": {
-                "activation" : "ParkinsonHelper/patient2/microservices/freezing",
-                "update_check" : "ParkinsonHelper/patient2/actuators/sf2_activation"
+                "activation": "ParkinsonHelper/patient2/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient2/actuators/sf2"
               }
             }
           ]
         }
       ],
-      "Statistic_services":[
+      "Statistic_services": [
         {
           "ServiceName": "TeleBot",
-          "token":"boh",
-          "topic":"ParkinsonHelper/patient2/microservices/fall"
-
+          "token": "boh",
+          "topic": "ParkinsonHelper/patient2/microservices/fall"
         },
         {
           "ServiceName": "ThingSpeak",
-          "token":"boh",
-          "topic":[
+          "token": "boh",
+          "topic": [
             "ParkinsonHelper/patient2/microservices/statistics",
             "ParkinsonHelper/patient2/microservices/fall",
             "ParkinsonHelper/patient2/microservices/freezing",
@@ -180,33 +177,39 @@
           ]
         }
       ]
+    },
+    {
+      "patientName": "",
+      "patientDocument": "bono",
+      "device_list": [],
+      "Statistic_services": [],
+      "patientID": 1
     }
   ],
-  "Service_list":
-  [
+  "Service_list": [
     {
-      "Service_name":"Freezing_Management",
-      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
-      "PublishTopic":"ParkinsonHelper/PATIENT_ID/microservices/freezing"
+      "Service_name": "Freezing_Management",
+      "SubscribeTopic": "ParkinsonHelper/+/sensors/#",
+      "PublishTopic": "ParkinsonHelper/PATIENT_ID/microservices/freezing"
     },
     {
-      "Service_name":"Fall_Management",
-      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
-      "PublishTopic":"ParkinsonHelper/PATIENT_ID/microservices/fall"
+      "Service_name": "Fall_Management",
+      "SubscribeTopic": "ParkinsonHelper/+/sensors/#",
+      "PublishTopic": "ParkinsonHelper/PATIENT_ID/microservices/fall"
     },
     {
-      "Service_name":"Tremon_Management",
-      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
-      "PublishTopic":"ParkinsonHelper/PATIENT_ID/microservices/tremor"
+      "Service_name": "Tremon_Management",
+      "SubscribeTopic": "ParkinsonHelper/+/sensors/#",
+      "PublishTopic": "ParkinsonHelper/PATIENT_ID/microservices/tremor"
     },
     {
-      "Service_name":"Statistic_Management",
-      "SubscribeTopic":"ParkinsonHelper/+/sensors/#",
-      "PublishTopic":"ParkinsonHelper/PATIENT_ID/microservices/statistics"
+      "Service_name": "Statistic_Management",
+      "SubscribeTopic": "ParkinsonHelper/+/sensors/#",
+      "PublishTopic": "ParkinsonHelper/PATIENT_ID/microservices/statistics"
     },
     {
-      "Service_name":"ThingSpeak_adaptor",
-      "SubscribeTopic":"ParkinsonHelper/+/microservices/#",
+      "Service_name": "ThingSpeak_adaptor",
+      "SubscribeTopic": "ParkinsonHelper/+/microservices/#",
       "PublishTopic": ""
     }
   ]
