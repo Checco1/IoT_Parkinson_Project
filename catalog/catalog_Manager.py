@@ -72,14 +72,12 @@ class Catalog(object):
         # Generate a new patientID starting from 1 and taking the first free
         # number which is available.
         numID = 1
-        new_id = numID
+        new_id = "patient"+str(numID)
 
         while new_id in list_id:
             numID += 1
             new_id = "patient"+str(numID)
 
-        patient_json["patientName"] = ""
-        patient_json["device_list"] = []
         patient_json["patientID"] = new_id
         print(patient_json)
 
@@ -93,53 +91,44 @@ class Catalog(object):
         self.write_patient()
         self.write_resource()
 
-    def add_device(self, device_json):
+    def add_device(self, device_json, patient):
         """Add a new device in the service catalog.
         The new deviceID is auto-generated.
         """
         self.load_file()
-        list_id = []
 
         # Generate list of all deviceID
-        for p in self.patient["patients_list"]:
-            for d in p["device_list"]:
-                list_id.append(d["deviceID"])
+        #for p in self.patient["patients_list"]:
+        #    for d in p["device_list"]:
+        #        list_id.append(d["deviceID"])
 
         # Find specific patient device in service and resource jsons.
         for p in self.patient["patients_list"]:
-            if p["patientID"] == device_json["patientID"]:
+            if p["patientID"] == patient:
                 break
 
         for pres in self.resource["patients_list"]:
-            if pres["patientID"] == device_json["patientID"]:
+            if pres["patientID"] == patient:
                 break
-
-        # Generate a new deviceID.
-        #numID = 1
-        #new_id = numID
-
-        #while new_id in list_id:
-        #    numID += 1
-        #    new_id = numID
-
-        del device_json["patientID"]
-        device_json["deviceID"] = "wirst2"
-        device_json["measureType"] = "TimeLas"
-        device_json["unit"] = ""
-        device_json["Services"] = []
 
         p["device_list"].append(device_json)
 
+        topic = device_json["Services"]
+        topic = topic["topic"]
+
         device_res_json = {
             "deviceID": device_json["deviceID"],
-            "topic": "Park",
-            "lastUpdate": 15
+            "topic": topic,
+            "lastUpdate": time.time()
         }
         pres["device_list"].append(device_res_json)
 
         #self.write_service()
         self.write_patient()
         self.write_resource()
+
+    def add_service(self, service_json, paitent):
+        pass
 
     def info(self, ID):
         """Return all information about a patient/device" given an ID."""
@@ -276,7 +265,14 @@ class Webserver(object):
             body = json.loads(cherrypy.request.body.read())  # Read body data
             cat = Catalog()
             print(json.dumps(body))
-            cat.add_device(body)
+            cat.add_device(body, uri[1])
+            return 200
+        
+        if uri[0] == 'adds':
+            body = json.loads(cherrypy.request.body.read())  # Read body data
+            cat = Catalog()
+            print(json.dumps(body))
+            cat.add_service(body, uri[1])
             return 200
 
        # if uri[0] == 'update':

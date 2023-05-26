@@ -21,7 +21,6 @@ class CreatePatient():
             "device_list": [],
             "Statistic_services":[]
         }
-        print(body)
         requests.post(request, body)
         return self.name, self.code_f
 

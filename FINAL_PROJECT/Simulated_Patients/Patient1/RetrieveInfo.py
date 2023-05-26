@@ -9,7 +9,8 @@ class RetrievePatientInfo():
     def GetID(self, name, code):
         self.ID=""
         request = self.url+"/patient"
-        response = (requests.get(request)).json()
+        response = requests.get(request)
+        response = response.json()
         for patient in response["patients_list"]:
             if patient["patientName"] == name and patient["patientDocument"] == code:
                 self.ID = patient["patientID"]
