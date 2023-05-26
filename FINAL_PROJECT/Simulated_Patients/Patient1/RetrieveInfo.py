@@ -14,6 +14,7 @@ class RetrievePatientInfo():
         for patient in response["patients_list"]:
             if patient["patientName"] == name and patient["patientDocument"] == code:
                 self.ID = patient["patientID"]
+        print("Patient ID: ",self.ID)
         return self.ID
 
     def GetTopic(self,patientID): #localhost:8080/info/patient1
