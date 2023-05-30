@@ -12,8 +12,11 @@ class CreatePatient():
         self.url = url
 
     def CreatePatient(self):
-        self.name = input("Please, enter the patient name and surname: ")
-        self.code_f = input("Please enter the code written on your ID card: ")
+        print("\n")
+        print("Welcome to ParkinsonHelper!")
+        print("Please, enter the patient name and surname of the new patient: ")
+        self.name = input("")
+        self.code_f = input("Please enter the code written on the patient's ID card: ")
         request = self.url+"/addp"
         body = {
             "patientName": str(self.name),
@@ -23,13 +26,16 @@ class CreatePatient():
             "Statistic_services":[]
         }
         print(body)
+        body = json.dumps(body)
         requests.post(request, body)
+        print("Patient created!")
         return self.name, self.code_f
 
     def CreateDevices(self, name, code_f):
+        print("\n")
+        print("Creation of the patient's personal devices.")
         info = RetrievePatientInfo(self.url)
         self.patientID = info.GetID(name, code_f)
-        print(self.patientID)
         numberID=self.patientID.replace("patient","")
         request = self.url+"/addd/"+str(self.patientID)
         
@@ -58,10 +64,11 @@ class CreatePatient():
             unitList.append(unitDevice)
 
             
-            print("Do you want to add new devices?")
+            print("Do you want to add other devices?")
             res = input("Y/N: ")
 
         for device in range(len(listDevices)):
+            print("\n")
             print(f"Creating the device {listDevices[device]}...")
             self.device= {
                 "deviceID": str(listDevices[device])+str(numberID),
@@ -70,43 +77,49 @@ class CreatePatient():
                 "unit": unitList[device]
             }
             if deviceTypeList[device] == "sensor":
-                self.device["Services"] = {
+                self.device["Services"] = [{
                     "serviceType": "MQTT",
                     "topic": "ParkinsonHelper/"+self.patientID+"/sensors/"+str(listDevices[device])+str(numberID)
-                  }
+                  }]
             elif deviceTypeList[device] == "actuator":
-                if "dbs" in str(listDevices[device]):
-                    {   
+                if "dbs" in str(listDevices[device]) or str(listDevices[device])=="dbs":
+                    self.device["Services"] = [{   
                         "serviceType": "MQTT",
                         "topic": {
                             "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/tremor",
                             "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
                         }
-                    }
-                if "sf" in str(listDevices[device]):
-                    {   
+                    }]
+                elif "sf" in str(listDevices[device]) or str(listDevices[device])=="sf":
+                    self.device["Services"] = [{   
                         "serviceType": "MQTT",
                         "topic": {
                             "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/freezing",
                             "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
                         }
-                    }
+                    }]
                 else:
                     print(f"Insert the topic to which the device {listDevices[device]} has to subscribe: ")
-                    topicDevice=input(f"ParkinsonHelper/{self.patientID}/")
-                    {   
+                    topicDevice=input(f"ParkinsonHelper/{self.patientID}/microservices/")
+                    self.device["Services"] = [{   
                         "serviceType": "MQTT",
                         "topic": {
-                            "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/freezing",
+                            "activation" : "ParkinsonHelper/"+self.patientID+"/microservices/"+str(topicDevice),
                             "update_check" : "ParkinsonHelper/"+self.patientID+"/actuators/"+str(listDevices[device])+str(numberID)
                         }
-                    }
+                    }]
 
             print(self.device)
+            self.device = json.dumps(self.device)
             requests.post(request,self.device)
             print(f"Device {listDevices[device]} posted!")
 
-    def CreateStatisticServices(self):
+    def CreateStatisticServices(self, name, code_f):
+        print("\n")
+        print(f"Adding mandatory services for the patient {name} with ID code {code_f}")
+
+        info = RetrievePatientInfo(self.url)
+        self.patientID = info.GetID(name, code_f)
 
         self.stats = {
             "Statistic_services":[
@@ -129,5 +142,7 @@ class CreatePatient():
             ]
         }
 
+        self.stats=json.dumps(self.stats)
         request = self.url+"/adds/"+self.patientID
         requests.post(request, self.stats)
+        print("Services added!")

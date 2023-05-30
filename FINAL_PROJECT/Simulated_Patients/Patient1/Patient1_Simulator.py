@@ -86,29 +86,29 @@ if __name__ == "__main__":
     #Registration in patient.json and in register_catalog.json
     register=CreatePatient("http://localhost:8080")
     [name, code] = register.CreatePatient()
-    register.CreateDevices(name, code)
-    #
-    ##Retrieve MQTT info (topics and settings) from patient.json
-    #info=RetrievePatientInfo("http://localhost:8080")
-    #patientID = info.GetID(name, code)
-    #topics=info.GetTopic(patientID)
-    #settings=info.GetSettings()
-    #broker = settings["IP"]
-    #port = int(settings["mqtt_port"])
-#
-    #print(topics)
+    #register.CreateDevices(name, code)
+    register.CreateStatisticServices(name, code)
+
+    """
+    #Retrieve MQTT info (topics and settings) from patient.json
+    info=RetrievePatientInfo("http://localhost:8080")
+    patientID = info.GetID(name, code)
+    topics=info.GetTopic(patientID)
+    settings=info.GetSettings()
+    broker = settings["IP"]
+    port = int(settings["mqtt_port"])
 
     #Retrieve data and publish them
-    #data=SensorSimulator(patientID,broker,port,topics)
-    #data.ReadTXT()
-    #data.client.start()
-    #data.SendData()
+    data=SensorSimulator(patientID,broker,port,topics)
+    data.ReadTXT()
+    data.client.start()
+    data.SendData()
 
     #End of the service
-    #data.client.unsubscribe(topics["waist_acc"])
-    #data.client.unsubscribe(topics["wrist_acc"])
-    #data.client.unsubscribe(topics["pressure"])
-    #data.client.stop()
-    
+    data.client.unsubscribe(topics["waist_acc"])
+    data.client.unsubscribe(topics["wrist_acc"])
+    data.client.unsubscribe(topics["pressure"])
+    data.client.stop()
+    """
 
 

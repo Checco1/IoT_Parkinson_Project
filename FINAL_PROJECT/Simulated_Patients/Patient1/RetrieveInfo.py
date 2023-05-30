@@ -7,6 +7,8 @@ class RetrievePatientInfo():
         self.url = url
 
     def GetID(self, name, code):
+        print("\n")
+        print("Getting ID...")
         self.ID=""
         request = self.url+"/patient"
         response = requests.get(request)
@@ -18,6 +20,8 @@ class RetrievePatientInfo():
         return self.ID
 
     def GetTopic(self,patientID): #localhost:8080/info/patient1
+        print("\n")
+        print("Getting topics...")
         self.topics={}
         request=self.url+"/info/"+str(patientID)
         numberID=str(patientID).replace("patient","")
@@ -29,10 +33,11 @@ class RetrievePatientInfo():
                   if service["serviceType"] == "MQTT":
                       deviceName = str(device["deviceID"]).replace(numberID,"")
                       self.topics.update({deviceName:str(service["topic"])})
-                
         return(self.topics)
     
     def GetSettings(self): #to get broker and port
+        print("\n")
+        print("Getting settings...")
         request=self.url+"/broker"
         response = requests.get(request)
         return(response.json())
