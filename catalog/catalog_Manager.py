@@ -127,8 +127,27 @@ class Catalog(object):
         self.write_patient()
         self.write_resource()
 
-    def add_service(self, service_json, paitent):
-        pass
+    def add_service(self, service_json , patID):
+        """Add a new device in the service catalog.
+        The new deviceID is auto-generated.
+        """
+        self.load_file()
+
+        # Generate list of all deviceID
+        #for p in self.patient["patients_list"]:
+        #    for d in p["device_list"]:
+        #        list_id.append(d["deviceID"])
+
+        # Find specific patient device in service and resource jsons.
+        for p in self.patient["patients_list"]:
+            if p["patientID"] == patID:
+                break
+        #self.service[""].append(service_json)
+        p["Statistic_services"].append(service_json)
+        self.patient["patients_list"].append(p)
+
+        #self.write_service()
+        self.write_patient()
 
     def info(self, ID):
         """Return all information about a patient/device" given an ID."""
