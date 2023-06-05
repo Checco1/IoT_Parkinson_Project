@@ -122,22 +122,44 @@ class CreatePatient():
         self.patientID = info.GetID(name, code_f)
 
         self.stats = {
-            "Statistic_services":[
-                {
-                  "ServiceName": "TeleBot",
-                  "token":"boh",
-                  "topic":"ParkinsonHelper/"+self.patientID+"/microservices/fall"
 
+            "Statistic_services":
+            [
+                {
+                "ServiceName": "TeleBot",
+                "token": "boh",
+                "Services": [
+                        {
+                        "ServiceType": "MQTT",
+                        "topic": "ParkinsonHelper/"+self.patientID+"/microservices/fall"
+                        }
+                    ]
                 },
                 {
-                  "ServiceName": "ThingSpeak",
-                  "token":"boh",
-                  "topic":[
-                    "ParkinsonHelper/"+self.patientID+"/microservices/statistics",
-                    "ParkinsonHelper/"+self.patientID+"/microservices/fall",
-                    "ParkinsonHelper/"+self.patientID+"/microservices/freezing",
-                    "ParkinsonHelper/"+self.patientID+"/microservices/tremor"
-                  ]
+                "ServiceName": "ThingSpeak",
+                "token": "boh",
+                "Services": [
+                        {
+                        "serviceProvider": "Statistic_manager",
+                        "serviceType": "MQTT",
+                        "topic": "ParkinsonHelper/"+self.patientID+"/microservices/statistics"
+                        },
+                        {
+                        "serviceProvider": "Fall_manager",
+                        "serviceType": "MQTT",
+                        "topic": "ParkinsonHelper/"+self.patientID+"/microservices/fall"
+                        },
+                        {
+                        "serviceProvider": "Freezing_manager",
+                        "serviceType": "MQTT",
+                        "topic": "ParkinsonHelper/"+self.patientID+"/microservices/freezing"
+                        },
+                        {
+                        "serviceProvider": "Tremor_manager",
+                        "serviceType": "MQTT",
+                        "topic": "ParkinsonHelper/"+self.patientID+"/microservices/tremor"
+                        }
+                    ]
                 }
             ]
         }

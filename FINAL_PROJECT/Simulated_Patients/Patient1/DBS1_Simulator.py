@@ -11,7 +11,7 @@ class RetrievePatientInfo():
         self.url = url
 
     def GetTopic(self,patientID): #localhost:8080/info/patient1
-        request=self.url+"/info/patient"+str(patientID)
+        request=self.url+"/info/"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
         for device in response_json["devices"]:
@@ -34,8 +34,8 @@ class DBSSimulator():
         self.topic_activation=topic_activation
         self.topic_update=topic_update
         self.client = MyMQTT("DBS1",broker,port,self)
+        self.t_activation=time.time()
         self.dbs_activation = False
-        self.dbs_timeUpdate = 0
         self.message={"bn": "patient1/dbs1",
                 "e":
                     [
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     print("The actuator DBS1 is not active")
 
     #Retrieve MQTT info (topics and settings) from patient.json
-    patientID = 1
+    patientID = "patient1"
     info=RetrievePatientInfo("http://localhost:8080")
     topic=info.GetTopic(patientID)
     topic_activation = topic["activation"]
@@ -89,15 +89,15 @@ if __name__ == "__main__":
     start=time.time()
 
     while True:
-        #Update every 300 seconds sending an MQTT message to catalog_Manager
-        dbs1.dbs_timeUpdate=time.time()-start
-        if dbs1.dbs_timeUpdate>250:
+        #Update every 250 seconds sending an MQTT message to catalog_Manager
+        dbs_timeUpdate=time.time()-start
+        if dbs_timeUpdate>250:
             dbs1.Update()
             start=time.time()
 
-        if dbs1.dbs_activation==True:
-            if (dbs1.t_activation-time.time())>120:
-                dbs1.dbs_activation=False
-                #this condition simulate the deactivation of the DBS after
-                #a certain amount of time (in reality, it would be a larger
-                #range)
+        if dbs1.dbs_activation==True and abs(dbs1.t_activation-time.time())>5:
+            print("The DBS has been deactivated!")
+            dbs1.dbs_activation=False
+            #this condition simulate the deactivation of the DBS after
+            #a certain amount of time (in reality, it would be a larger
+            #range)

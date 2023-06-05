@@ -164,16 +164,37 @@
         {
           "ServiceName": "TeleBot",
           "token": "boh",
-          "topic": "ParkinsonHelper/patient2/microservices/fall"
+          "Services": [
+            {
+              "ServiceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/microservices/fall"
+            }
+          ]
         },
         {
           "ServiceName": "ThingSpeak",
           "token": "boh",
-          "topic": [
-            "ParkinsonHelper/patient2/microservices/statistics",
-            "ParkinsonHelper/patient2/microservices/fall",
-            "ParkinsonHelper/patient2/microservices/freezing",
-            "ParkinsonHelper/patient2/microservices/tremor"
+          "Services": [
+            {
+              "serviceProvider": "Statistic_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/microservices/statistics"
+            },
+            {
+              "serviceProvider": "Fall_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/microservices/fall"
+            },
+            {
+              "serviceProvider": "Freezing_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/microservices/freezing"
+            },
+            {
+              "serviceProvider": "Tremor_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient2/microservices/tremor"
+            }
           ]
         }
       ]

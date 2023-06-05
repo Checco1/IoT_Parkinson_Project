@@ -3,18 +3,6 @@ import time
 from MyMQTT import *
 import cherrypy
 import requests
-
-class UpdatingCheck():
-    exposed = True
-    def __init__(self, url) -> None:
-        self.url = url
-
-    def GET(self):
-        #Answering to the updating check every 300 s
-        answer={
-            "active": True
-        }
-        return(json.dumps(answer))
         
 
 class RetrievePatientInfo():
@@ -23,7 +11,7 @@ class RetrievePatientInfo():
         self.url = url
 
     def GetTopic(self,patientID): #localhost:8080/info/patient1
-        request=self.url+"/info/patient"+str(patientID)
+        request=self.url+"/info/"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
         for device in response_json["devices"]:
@@ -47,7 +35,7 @@ class SFSimulator():
         self.topic_update=topic_update
         self.client = MyMQTT("SF1",broker,port,self)
         self.sf_activation = False
-        self.sf_timeUpdate = 0
+        self.t_activation = time.time()
         self.message={"bn": "patient1/sf1",
                 "e":
                     [
@@ -84,7 +72,7 @@ if __name__ == "__main__":
     print("The actuator SoundFeedback1 is not active")
 
     #Retrieve MQTT info (topics and settings) from patient.json
-    patientID = 1
+    patientID = "patient1"
     info=RetrievePatientInfo("http://localhost:8080")
     topic=info.GetTopic(patientID)
     topic_activation = topic["activation"]
@@ -101,12 +89,12 @@ if __name__ == "__main__":
 
 
     while True:
-        soundfeedback1.sf_timeUpdate=time.time()-start
-        if soundfeedback1.sf_timeUpdate>250:
+        sf_timeUpdate=time.time()-start
+        if sf_timeUpdate>250:
             soundfeedback1.Update()
             start=time.time()
 
-        if soundfeedback1.sf_activation==True:
-            if (soundfeedback1.t_activation-time.time())>10:
-                soundfeedback1.sf_activation=False
-                #this condition simulate the deactivation of the SF after 10 seconds
+        if soundfeedback1.sf_activation==True and abs(soundfeedback1.t_activation-time.time())>5:
+            soundfeedback1.sf_activation=False
+            print("The SF1 has been deactivated!")
+            #this condition simulate the deactivation of the SF after 10 seconds

@@ -86,7 +86,7 @@ if __name__ == "__main__":
     #Registration in patient.json and in register_catalog.json
     register=CreatePatient("http://localhost:8080")
     [name, code] = register.CreatePatient()
-    #register.CreateDevices(name, code)
+    register.CreateDevices(name, code)
     register.CreateStatisticServices(name, code)
 
     """
@@ -110,5 +110,3 @@ if __name__ == "__main__":
     data.client.unsubscribe(topics["pressure"])
     data.client.stop()
     """
-
-
