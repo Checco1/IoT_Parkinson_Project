@@ -114,11 +114,10 @@ class Catalog(object):
         p["device_list"].append(device_json)
 
         topic = device_json["Services"]
-        topic = topic["topic"]
 
         device_res_json = {
             "deviceID": device_json["deviceID"],
-            "topic": topic,
+            "Services": topic,
             "lastUpdate": time.time()
         }
         pres["device_list"].append(device_res_json)
@@ -143,8 +142,8 @@ class Catalog(object):
             if p["patientID"] == patID:
                 break
         #self.service[""].append(service_json)
-        p["Statistic_services"].append(service_json)
-        self.patient["patients_list"].append(p)
+        p["Statistic_services"] = service_json["Statistic_services"]
+        #self.patient["patients_list"].append(p)
 
         #self.write_service()
         self.write_patient()
@@ -166,12 +165,12 @@ class Catalog(object):
 
         return -1
 
-    def update_device(self, patientID, deviceID, topic):
+    def update_device(self, patientID, deviceID, service):
         """Update timestamp of a device.
         Update timestamp or insert it again in the resource catalog if it has
         expired.
         """
-        data = {'deviceID': deviceID, 'topic': topic, 'lastUpdate': time.time()}
+        data = {'deviceID': deviceID, 'Services': service, 'lastUpdate': time.time()}
         self.load_file()
 
         for p in self.resource["patients_list"]:
@@ -183,7 +182,7 @@ class Catalog(object):
             if d['deviceID'] == deviceID:
                 found = 1
                 print("Updating %s timestamp." % deviceID)
-                d['topic'] = topic
+                d['Services'] = service
                 d['lastUpdate'] = time.time()    
 
         if not found:  # Insert again the device
@@ -346,19 +345,17 @@ class MySubscriber:
         devID = message['bn']
         devID = devID.split('/')
         print(message)
-        print("\n")
         try:
             for e in message['e']:
                 if e['timeStamp'] > 0:
                     string = ('http://' + self.url + ':' + self.port +
-                              '/info/' + devID[3])
+                              '/info/' + devID[1])
                     info = json.loads(requests.get(string).text)
-                    patientID = devID[1]
+                    patientID = devID[0]
                     deviceID = info["deviceID"]
-                    for serv in info['Services']:
-                        topic = serv['topic']
+                    service = info['Services']
                     
-                    catalog.update_device(patientID, deviceID, topic)
+                    catalog.update_device(patientID, deviceID, service)
         except Exception:
             pass
 

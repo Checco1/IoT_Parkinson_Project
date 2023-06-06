@@ -167,4 +167,5 @@ class CreatePatient():
         self.stats=json.dumps(self.stats)
         request = self.url+"/adds/"+self.patientID
         requests.post(request, self.stats)
+        print(self.stats)
         print("Services added!")
