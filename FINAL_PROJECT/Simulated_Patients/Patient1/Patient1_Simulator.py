@@ -51,7 +51,8 @@ class SensorSimulator():
     def SendData(self):
         for i in range(len(self.waist_acc)):
 
-            self.message["bn"]=str(self.patientID)+"/waist_acc"
+            self.numID = self.patientID.replace("patient","")
+            self.message["bn"]=str(self.patientID)+"/waist_acc"+str(self.numID)
             self.message["e"][0]["measureType"] = "TimeLastPeak"
             self.message["e"][0]["unit"] = "s"
             self.message["e"][0]["timeStamp"] = int(time.time())
@@ -60,7 +61,7 @@ class SensorSimulator():
             print(self.publish_topic)
             self.client.myPublish(self.publish_topic,self.message)
 
-            self.message["bn"]=str(self.patientID)+"/wrist_acc"
+            self.message["bn"]=str(self.patientID)+"/wrist_acc"+str(self.numID)
             self.message["e"][0]["measureType"] = "MeanFrequencyAcceleration"
             self.message["e"][0]["unit"] = "Hz"
             self.message["e"][0]["timeStamp"] = int(time.time())
@@ -69,7 +70,7 @@ class SensorSimulator():
             print(self.publish_topic)
             self.client.myPublish(self.publish_topic,self.message)
 
-            self.message["bn"]=str(self.patientID)+"/pressure"
+            self.message["bn"]=str(self.patientID)+"/pressure"+str(self.numID)
             self.message["e"][0]["measureType"] = "FeetPressure"
             self.message["e"][0]["unit"] = "kg"
             self.message["e"][0]["timeStamp"] = int(time.time())
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     register.CreateDevices(name, code)
     register.CreateStatisticServices(name, code)
 
-    """
+    
     #Retrieve MQTT info (topics and settings) from patient.json
     info=RetrievePatientInfo("http://localhost:8080")
     patientID = info.GetID(name, code)
@@ -109,4 +110,3 @@ if __name__ == "__main__":
     data.client.unsubscribe(topics["wrist_acc"])
     data.client.unsubscribe(topics["pressure"])
     data.client.stop()
-    """
