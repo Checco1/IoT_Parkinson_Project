@@ -15,7 +15,7 @@ class RetrievePatientInfo():
         response = requests.get(request)
         response_json=response.json()
         for device in response_json["devices"]:
-            if device["deviceID"]=="soundfeedback1":
+            if device["deviceID"]=="sf1":
                 for service in device["Services"]:
                     if service["serviceType"] == "MQTT":
                         self.topics= {"activation":str(service["topic"]["activation"]),
