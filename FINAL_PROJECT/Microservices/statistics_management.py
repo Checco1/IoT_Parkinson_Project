@@ -38,51 +38,69 @@ class statistics_management():
                     ]
         }
 
-        self.waist_buffer = RingBuffer(15, float)
-        self.wrist_buffer = RingBuffer(15, float)
-        self.pressure_buffer = RingBuffer(15, float)
+        self.listOfPatients = [{"waistBuffer" : [15], "wristBuffer": [15], "pressureBuffer": [15]}]*512
+        self.sensor_id = "default"
+        self.receivedPatientID = "default"
+        self.receivedActuator = "default"
+
 
     def MyOnConnect(self, paho_mqtt, user_data, flags, rc):
             pass
 
-    # ============Send the whole buffer===================
+
     def MyOnMessage(self, paho_mqtt, user_data, msg):
+
         sensor_info = json.loads(msg.payload)
-        #print(sensor_info)
-        if(sensor_info["e"][0]["measureType"] == "TimeLastPeak"):
+        # Retrieve sensor and ID from the "bn field"
+        self.sensor_id = sensor_info["bn"]
+        sensorParameters = self.sensor_id.split('/')
+        self.receivedPatientID = sensorParameters[0]
+        self.receivedActuator = sensorParameters[1]
+
+        # Get the numerical ID of the patient
+        patientID = self.receivedPatientID
+        patientNumber = int(patientID.replace("patient", ''))
+
+        waistSensorName = "waist_acc" + str(patientNumber)
+        wristSensorName = "wrist_acc" + str(patientNumber)
+        pressureSensorName = "pressure" + str(patientNumber)
+
+        if(self.receivedActuator == waistSensorName):
             waist_freq = sensor_info["e"][0]["value"]
-            self.waist_buffer.append(waist_freq)
-            v = {"mean" : np.mean(self.waist_buffer),
-                 "std" : np.std(self.waist_buffer),
-                 "measurements" : str(self.waist_buffer._arr)
-                 }
-            self.structure["e"][0]["measureType"] = "WaistAccStats"
-            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
-            self.structure["e"][0]["value"] = v
+            self.listOfPatients[patientNumber]["waistBuffer"].append(waist_freq)
+            if (len(self.listOfPatients[patientNumber]["waistBuffer"]) == 15):
+                self.structure["bn"] = self.sensor_id      
+                self.structure["e"][0]["measureType"] = "WaistAccStats"
+                self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+                self.structure["e"][0]["value"] = str(self.listOfPatients[patientNumber]["waistBuffer"])
+                # Remove the content of the buffer
+                self.listOfPatients[patientNumber]["waistBuffer"].clear()
+                self.publisher(json.dumps(self.structure))
 
-        elif(sensor_info["e"][0]["measureType"] == "MeanFrequencyAcceleration"):
+        elif(self.receivedActuator == wristSensorName):
             wrist_freq = sensor_info["e"][0]["value"]
-            self.wrist_buffer.append(wrist_freq)
-            v = {"mean" : np.mean(self.wrist_buffer),
-                 "std" : np.std(self.wrist_buffer),
-                 "measurements" : str(self.wrist_buffer._arr)
-                 }
-            self.structure["e"][0]["measureType"] = "WristAccStats"
-            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
-            self.structure["e"][0]["value"] = v
+            self.listOfPatients[patientNumber]["wristBuffer"].append(wrist_freq)
+            if (len(self.listOfPatients[patientNumber]["wristBuffer"]) == 15): 
+                self.structure["bn"] = self.sensor_id      
+                self.structure["e"][0]["measureType"] = "WristAccStats"
+                self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+                self.structure["e"][0]["value"] = str(self.listOfPatients[patientNumber]["wristBuffer"])
+                # Remove the content of the buffer
+                self.listOfPatients[patientNumber]["wristBuffer"].clear()
+                self.publisher(json.dumps(self.structure))
 
-        elif(sensor_info["e"][0]["measureType"] == "FeetPressure"):
+        elif(self.receivedActuator == pressureSensorName):
             pressure = sensor_info["e"][0]["value"]
-            self.pressure_buffer.append(pressure)
-            v = {"mean" : np.mean(self.pressure_buffer),
-                 "std" : np.std(self.pressure_buffer),
-                 "measurements" : str(self.pressure_buffer._arr)
-                 }
-            self.structure["e"][0]["measureType"] = "FeetPressureStats"
-            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
-            self.structure["e"][0]["value"] = v
+            self.listOfPatients[patientNumber]["pressureBuffer"].append(pressure)
+            if (len(self.listOfPatients[patientNumber]["pressureBuffer"]) == 15):  
+                self.structure["bn"] = self.sensor_id    
+                self.structure["e"][0]["measureType"] = "PressureStats"
+                self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+                self.structure["e"][0]["value"] = str(self.listOfPatients[patientNumber]["pressureBuffer"])
+                # Remove the content of the buffer
+                self.listOfPatients[patientNumber]["pressureBuffer"].clear()
+                self.publisher(json.dumps(self.structure))
         
-        self.publisher(json.dumps(self.structure))
         return self.structure
 
     def start(self):
@@ -94,8 +112,9 @@ class statistics_management():
         print('Subscribed to' + self.topic)
 
     def publisher(self, msg):
-        self._paho_mqtt.publish(self.actuators_topic, msg, 2)
-        print("published: " + str(msg) + " on " + self.actuators_topic)
+        topic = self.actuators_topic.replace( "PATIENT_ID", self.receivedPatientID)
+        self._paho_mqtt.publish(topic, msg, 2)
+        print("published: " + str(msg) + " on " + topic)
 
     def stop(self):
         self._paho_mqtt.unsubscribe(self.topic)
@@ -106,22 +125,16 @@ class statistics_management():
 
 if __name__ == "__main__":
     microserviceID = 'stats147852' 
-    nclients = 2 ######### WE SHOULD HAVE A SETTING DESCRIBING HOW MANY CLIENTS DO WE HAVE
-
-    sensors = []
-    tm = []
+    uri_broker = 'http://localhost:8080/broker'
+    uri_sensor = 'http://localhost:8080/info/patient1'
+    uri_actuators = 'http://localhost:8080/ts'
 
      # Get info about port and broker
-    uri_broker = 'http://localhost:8080/broker'
     settings = requests.get(uri_broker).json()
-    print(settings)
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
 
-    # Get the dictionary with all the clients and their sensors and actuators
-    
     # get client's sensors 
-    uri_sensor = 'http://localhost:8080/info/patient1'
     client_info= requests.get(uri_sensor).json()
     waist_acc_ID = "waist_acc1"
 
@@ -131,12 +144,10 @@ if __name__ == "__main__":
                
     topic_args = waist_topic_p_1.split('/')
     sensors =topic_args[0]+'/+/'+topic_args[2]+'/'+ '#'
-    ####### IF THE LAST PARAMETER DEPENDS ON THE CLIENT NUMBER, THE WILDCARD IS WORTHLESS###
 
     # get client's actuators
-    #==================ASK ABOUT THINGSPEAK'S URI=============
-    uri_actuators = 'http://localhost:8080/ts'
-    actuators_topics = "ParkinsonHelper/patient1/actuator/statistics"
+    
+    actuators_topics = "ParkinsonHelper/PATIENT_ID/actuator/statistics"
 
     # Creating as many instances as clients, so they can comunicate with their corresponding actuator
     tm = statistics_management(microserviceID, port, broker, sensors, actuators_topics)
