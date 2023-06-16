@@ -61,6 +61,7 @@ class fall_management():
         pressureSensorName = "pressure" + str(patientNumber)
 
         if(self.receivedActuator == waistSensorName):
+            print(sensor_info)
             waist_freq = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
             self.structure["e"][0]["value"] = 0
@@ -68,9 +69,12 @@ class fall_management():
                 self.structure["e"][0]["value"] = 1
                 print ("Stop at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
                 self.listOfPatients[patientNumber]["waistFlag"] = 1
+            else:
+                 self.listOfPatients[patientNumber]["waistFlag"] = 0
                 
 
         elif(self.receivedActuator == pressureSensorName):
+            print(sensor_info)
             pressure = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
             self.structure["e"][0]["value"] = 0
@@ -78,6 +82,8 @@ class fall_management():
                 self.structure["e"][0]["value"] = 1
                 print ("Pressure lying at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
                 self.listOfPatients[patientNumber]["pressureFlag"] = 1
+            else:
+                 self.listOfPatients[patientNumber]["pressureFlag"] = 0
                  
         if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
             print("Fall situation at " + str(sensor_info["e"][0]["timeStamp"]))

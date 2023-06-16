@@ -91,10 +91,6 @@ class MyBot:
         elif(message == "/stats"):
             self.stats()
 
-            
-
-        #self.bot.sendMessage(self.chat_ID,text="You sent:\n"+message)
-
     """Send a message when the command /start is issued."""
     def start(self):
         
@@ -103,19 +99,6 @@ class MyBot:
             "or write /help to get the full list of commands")
         self.bot.sendMessage(self.chat_ID, text=msg)
         
-        # Send chat_id to catalog.
-        # data = {
-        #     "name": update.message.from_user.username.lower(),
-        #     "chat_id": update.message.chat_id
-        # }
-        # with open(CONF, "r") as f:
-        #     config = json.loads(f.read())
-        # url = config["cat_ip"]
-        # port = config["cat_port"]
-        # string = "http://" + url + ":" + port
-        # # dynamic = json.loads(requests.get(string + '/dynamic').text)
-        # requests.post(string + '/update/user', data=json.dumps(data))
-        # print("Chat ID for user %s has been updated." % (data["name"]))
 
     """Send a message when the command /login is issued."""
     def patientID(self):
@@ -152,72 +135,6 @@ class MyBot:
         stats_subscriber = MQTTsubscriber(mqtt_id, broker, port, topic, self)
         stats_subscriber.start()
         print("Subscribed to patient: " + topic)
-
-
-def values(bot, update, args):
-    """Get information about all sensor values for every plant."""
-    try:
-        plantID = " ".join(args)
-        if plantID[0:2] != 'p_':
-            raise Exception
-
-    except Exception:
-        msg = "You must provide a `plantID`"
-        #bot.sendMessage(chat_id=update.message.chat_id, text=msg,
-        #                parse_mode=ParseMode.MARKDOWN)
-        return
-
-    with open(CONF, "r") as f:
-        config = json.loads(f.read())
-    url = config["cat_ip"]
-    port = config["cat_port"]
-    string = "http://" + url + ":" + port
-    static = json.loads(requests.get(string + '/static').text)
-    ts = json.loads(requests.get(string + '/ts').text)
-    ts_url, ts_port = ts["IP"], ts["port"]
-
-    time = "minutes"
-    tval = "5"
-
-    for g in static["gardens"]:
-        users = [u["name"].lower() for u in g["users"]]
-        for p in g["plants"]:
-            if p["plantID"] == plantID:
-                if (update.message.from_user.username).lower() in users:
-                    now = datetime.datetime.now()
-                    message = ('🌱 ' + p["name"] +
-                               '\n    🕒' + ' ' + str(now.hour).zfill(2) + ':' +
-                               str(now.minute).zfill(2))
-
-                    for d in p["devices"]:
-
-                        for res in d["resources"]:
-                            string = ("http://" + ts_url + ":" + ts_port +
-                                      "/data/" +
-                                      plantID + "/" + res["n"] + "?time=" +
-                                      time + "&tval=" + tval + "&plantID=" +
-                                      plantID + "&devID=" + d["devID"])
-                            r = json.loads(requests.get(string).text)
-                            data = r["data"]
-
-                            if data != []:
-                                m = np.mean(data)
-                                message += ('\n    🔸' + res["n"].capitalize()
-                                            + ': ' + str(m.round(2)) + ' ' +
-                                            res["u"])
-
-                            else:
-                                message += ('\n    🔺' + res["n"].capitalize()
-                                            + ': ' + str('n.a.'))
-
-                    message = message.replace('Celsius', '°C')
-                    update.message.reply_text(message)
-                    return
-
-                else:
-                    message = "This plant does not belong to you!"
-                    update.message.reply_text(message)
-
 
 class Notification(threading.Thread):
     def __init__(self, ThreadID, name):

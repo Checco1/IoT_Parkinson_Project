@@ -24,9 +24,7 @@ class freezing_management():
         self._paho_mqtt = PahoMQTT.Client(self.clientID, True)
         self._paho_mqtt.on_connect = self.MyOnConnect
         self._paho_mqtt.on_message = self.MyOnMessage
-        self.sensor_id = "default"
-        self.receivedPatientID = "default"
-        self.receivedActuator = "default"
+        
 
         self.bn = "ParkinsonHelper"
         self.structure = {"bn": self.bn +"/freezing_manager",
@@ -41,6 +39,10 @@ class freezing_management():
                     ]
 
         }
+        self.listOfPatients = [{"waistFlag" : 0, "pressureFlag": 0}]*512
+        self.sensor_id = "default"
+        self.receivedPatientID = "default"
+        self.receivedActuator = "default"
         
     def MyOnConnect(self, paho_mqtt, user_data, flags, rc):
             pass
@@ -52,9 +54,9 @@ class freezing_management():
         self.receivedPatientID = sensorParameters[0]
         self.receivedActuator = sensorParameters[1]
         patientNumber = int(self.receivedPatientID.replace("patient", ''))
-        sensor_name = "waist_acc" + str(patientNumber)
-
-        if(self.receivedActuator == sensor_name):
+        waistSensorName = "waist_acc" + str(patientNumber)
+        pressureSensorName = "pressure" + str(patientNumber)
+        if(self.receivedActuator == waistSensorName):
             print(sensor_info)
             waist_time = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
@@ -62,8 +64,29 @@ class freezing_management():
             if (waist_time >= 1.5): #and (waist_time <= 1.71): #must check if time last peak is > 1.5
                 self.structure["e"][0]["value"] = 1
                 print ("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                self.listOfPatients[patientNumber]["waistFlag"] = 1
                 self.publisher(json.dumps(self.structure))
+            else:
+                 self.listOfPatients[patientNumber]["waistFlag"] = 0
+
+        elif(self.receivedActuator == pressureSensorName):
+            print(sensor_info)
+            pressure = sensor_info["e"][0]["value"]
+            self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
+            self.structure["e"][0]["value"] = 0
+            if (pressure > 30):
+                self.structure["e"][0]["value"] = 1
+                print ("Pressure over 30 detected at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                self.listOfPatients[patientNumber]["pressureFlag"] = 1
+            else:
+                 self.listOfPatients[patientNumber]["pressureFlag"] = 1
             #must check is pressure is >30 (so the patient is standing up and it is not a fall episode)
+
+        if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+            print("Fall situation at " + str(sensor_info["e"][0]["timeStamp"]))
+            self.publisher(json.dumps(self.structure))
+            self.listOfPatients[patientNumber]["pressureFlag"] = 0
+            self.listOfPatients[patientNumber]["waistFlag"] = 0
 
         return self.structure
 

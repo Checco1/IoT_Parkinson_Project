@@ -2,10 +2,45 @@
   "patients_list": [
     {
       "patientID": "patient1",
-      "device_list": []
+      "device_list": [
+        {
+          "deviceID": "waist_acc1",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/waist_acc1"
+            }
+          ],
+          "lastUpdate": 1686927252.3955393
+        },
+        {
+          "deviceID": "wrist_acc1",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/wrist_acc1"
+            }
+          ],
+          "lastUpdate": 1686927252.4561706
+        },
+        {
+          "deviceID": "pressure1",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/pressure1"
+            }
+          ],
+          "lastUpdate": 1686927252.4867013
+        }
+      ]
     },
     {
       "patientID": "patient2",
+      "device_list": []
+    },
+    {
+      "patientID": "patient1",
       "device_list": []
     },
     {
