@@ -56,7 +56,7 @@ class tremor_management():
             wrist_freq = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
             self.structure["e"][0]["value"] = 0
-            if (wrist_freq >= 4) and (wrist_freq <= 9): #must be >4 (there is no upper limit)
+            if (wrist_freq >= 4): #and (wrist_freq <= 9): #must be >4 (there is no upper limit)
                 self.structure["e"][0]["value"] = 1
                 print ("Tremor situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
                 self.publisher(json.dumps(self.structure))

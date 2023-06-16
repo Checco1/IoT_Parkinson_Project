@@ -59,7 +59,7 @@ class freezing_management():
             waist_time = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
             self.structure["e"][0]["value"] = 0
-            if (waist_time >= 1.69) and (waist_time <= 1.71): #must check if time last peak is > 1.5
+            if (waist_time >= 1.5): #and (waist_time <= 1.71): #must check if time last peak is > 1.5
                 self.structure["e"][0]["value"] = 1
                 print ("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
                 self.publisher(json.dumps(self.structure))
