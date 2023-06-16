@@ -2,13 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from MyMQTT import *
+import cherrypy
+import requests
+from Patient_creation import *
+from RetrieveInfo import *
 
-class RetrieveData():
+class SensorSimulator():
 
-    def __init__(self, patientID,broker,port,baseTopic):
+    def __init__(self, patientID,broker,port,topics):
 
-        self.baseTopic=baseTopic
-        self.client = MyMQTT("DeviceConnector",broker,port,None)
+        self.topics=topics #dictionary of topics
+        self.publish_topic= "" #topic in use
+        self.client = MyMQTT("SensorSimulator",broker,port,None)
         self.message={"bn": "",
                 "e":
                     [
@@ -28,9 +33,9 @@ class RetrieveData():
         self.patientID = patientID
 
     def ReadTXT(self):
-        f_p = open("pressure"+str(self.patientID)+".txt","r")
-        f_waist = open("waist_acc"+str(self.patientID)+".txt","r")
-        f_wrist = open("wrist_acc"+str(self.patientID)+".txt","r")
+        f_p = open("pressure2.txt","r")
+        f_waist = open("waist_acc2.txt","r")
+        f_wrist = open("wrist_acc2.txt","r")
 
         for line in f_p:
             self.pressure.append(float(line.strip('\n')))
@@ -43,52 +48,65 @@ class RetrieveData():
         f_waist.close()
         f_wrist.close()
 
-    def start(self):
-        self.client.start()
-
-    def stop(self):
-        self.client.stop()
-
     def SendData(self):
         for i in range(len(self.waist_acc)):
 
-            self.message["bn"]="/waist_acc"+str(self.patientID)
+            self.numID = self.patientID.replace("patient","")
+            self.message["bn"]=str(self.patientID)+"/waist_acc"+str(self.numID)
             self.message["e"][0]["measureType"] = "TimeLastPeak"
             self.message["e"][0]["unit"] = "s"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.waist_acc[i])
-            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient2/waist_acc1
-            self.client.myPublish(self.topic,self.message)
+            self.publish_topic=self.topics["waist_acc"]
+            print(self.publish_topic)
+            self.client.myPublish(self.publish_topic,self.message)
 
-            self.message["bn"]="/wrist_acc"+str(self.patientID)
+            self.message["bn"]=str(self.patientID)+"/wrist_acc"+str(self.numID)
             self.message["e"][0]["measureType"] = "MeanFrequencyAcceleration"
             self.message["e"][0]["unit"] = "Hz"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.wrist_acc[i])
-            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient2/wrist_acc1
-            self.client.myPublish(self.topic,self.message)
+            self.publish_topic=self.topics["wrist_acc"]
+            print(self.publish_topic)
+            self.client.myPublish(self.publish_topic,self.message)
 
-            self.message["bn"]="/pressure"+str(self.patientID)
+            self.message["bn"]=str(self.patientID)+"/pressure"+str(self.numID)
             self.message["e"][0]["measureType"] = "FeetPressure"
             self.message["e"][0]["unit"] = "kg"
             self.message["e"][0]["timeStamp"] = int(time.time())
             self.message["e"][0]["value"] = float(self.pressure[i])
-            self.topic=self.baseTopic+self.message["bn"]    #the topic is /ParkinsonHelper/patient2/pressure1
-            self.client.myPublish(self.topic,self.message)
+            self.publish_topic=self.topics["pressure"]
+            print(self.publish_topic)
+            self.client.myPublish(self.publish_topic,self.message)
             time.sleep(2)
             print("Published!")
         
 
 if __name__ == "__main__":
+
+    #Registration in patient.json and in register_catalog.json
+    register=CreatePatient("http://localhost:8080")
+    [name, code] = register.CreatePatient()
+    register.CreateDevices(name, code)
+    register.CreateStatisticServices(name, code)
+
     
-    conf=json.load(open("settings.json"))
-    patientID = 2
-    broker = conf["broker"]
-    port = conf["port"]
-    baseTopic = conf["baseTopic"]+'/patient'+str(patientID)
-    print(baseTopic)
-    data=RetrieveData(patientID,broker,port,baseTopic)
+    #Retrieve MQTT info (topics and settings) from patient.json
+    info=RetrievePatientInfo("http://localhost:8080")
+    patientID = info.GetID(name, code)
+    topics=info.GetTopic(patientID)
+    settings=info.GetSettings()
+    broker = settings["IP"]
+    port = int(settings["mqtt_port"])
+
+    #Retrieve data and publish them
+    data=SensorSimulator(patientID,broker,port,topics)
     data.ReadTXT()
-    data.start()
+    data.client.start()
     data.SendData()
-    data.stop()
+
+    #End of the service
+    data.client.unsubscribe(topics["waist_acc"])
+    data.client.unsubscribe(topics["wrist_acc"])
+    data.client.unsubscribe(topics["pressure"])
+    data.client.stop()
