@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     while True:
         sf_timeUpdate=time.time()-start
-        if sf_timeUpdate>250:
+        if sf_timeUpdate>25:
             soundfeedback1.Update()
             start=time.time()
 

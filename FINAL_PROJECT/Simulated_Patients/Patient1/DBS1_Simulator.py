@@ -89,9 +89,9 @@ if __name__ == "__main__":
     start=time.time()
 
     while True:
-        #Update every 250 seconds sending an MQTT message to catalog_Manager
+        #Update every 25 seconds sending an MQTT message to catalog_Manager
         dbs_timeUpdate=time.time()-start
-        if dbs_timeUpdate>250:
+        if dbs_timeUpdate>25:
             dbs1.Update()
             start=time.time()
 
