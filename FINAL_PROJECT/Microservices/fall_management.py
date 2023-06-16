@@ -64,7 +64,7 @@ class fall_management():
             waist_freq = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
             self.structure["e"][0]["value"] = 0
-            if (waist_freq >= 1.69) and (waist_freq <= 1.71):
+            if (waist_freq >= 1.69) and (waist_freq <= 1.71): #must check if time last peak is > 1.5
                 self.structure["e"][0]["value"] = 1
                 print ("Stop at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
                 self.listOfPatients[patientNumber]["waistFlag"] = 1
