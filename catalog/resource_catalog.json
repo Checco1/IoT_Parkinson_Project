@@ -2,38 +2,7 @@
   "patients_list": [
     {
       "patientID": "patient1",
-      "device_list": [
-        {
-          "deviceID": "waist_acc1",
-          "Services": [
-            {
-              "serviceType": "MQTT",
-              "topic": "ParkinsonHelper/patient1/sensors/waist_acc1"
-            }
-          ],
-          "lastUpdate": 1686927252.3955393
-        },
-        {
-          "deviceID": "wrist_acc1",
-          "Services": [
-            {
-              "serviceType": "MQTT",
-              "topic": "ParkinsonHelper/patient1/sensors/wrist_acc1"
-            }
-          ],
-          "lastUpdate": 1686927252.4561706
-        },
-        {
-          "deviceID": "pressure1",
-          "Services": [
-            {
-              "serviceType": "MQTT",
-              "topic": "ParkinsonHelper/patient1/sensors/pressure1"
-            }
-          ],
-          "lastUpdate": 1686927252.4867013
-        }
-      ]
+      "device_list": []
     },
     {
       "patientID": "patient2",
@@ -46,6 +15,53 @@
     {
       "patientID": "patient1",
       "device_list": []
+    },
+    {
+      "patientID": "patient2",
+      "device_list": []
+    },
+    {
+      "patientID": "patient3",
+      "device_list": []
+    },
+    {
+      "patientID": "patient4",
+      "device_list": []
+    },
+    {
+      "patientID": "patient5",
+      "device_list": [
+        {
+          "deviceID": "waist_acc5",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient5/sensors/waist_acc5"
+            }
+          ],
+          "lastUpdate": 1687101120.018446
+        },
+        {
+          "deviceID": "wrist_acc5",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient5/sensors/wrist_acc5"
+            }
+          ],
+          "lastUpdate": 1687101120.0513053
+        },
+        {
+          "deviceID": "pressure5",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient5/sensors/pressure5"
+            }
+          ],
+          "lastUpdate": 1687101120.0646677
+        }
+      ]
     }
   ]
 }

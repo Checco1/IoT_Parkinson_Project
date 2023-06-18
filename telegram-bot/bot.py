@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Telegram bot for smart gardening."""
-#from telegram.ext import Updater, CommandHandler
-#from telegram import ParseMode
 import logging
 import json
 import requests
@@ -61,17 +56,10 @@ class MyPublisher(object):
 
 class MyBot:
     def __init__(self):
-        with open(CONF, "r") as f:
-            config = json.loads(f.read())
-
-        self.url = config["cat_ip"]
-        self.port = config["cat_port"]
-        self.uri = "http://" + self.url + ":" + self.port + "/" + "api/telegramtoken"
+        
         self.chatID = 0
         self.clientID = ""
         self.msg = {}
-        #token = json.loads(requests.get(string).text)
-        #token = token["token"]
 
         # Local token
         self.token = "6033951332:AAG2vwBOhgkv14NJbXM0csj7-0up6-ief9E"
@@ -94,7 +82,7 @@ class MyBot:
     """Send a message when the command /start is issued."""
     def start(self):
         
-        msg = ("Welcome to the Parkinson Helper bot\n" +
+        msg = ("Welcome to the Parkinson Helper bot 🏥\n" +
             "Please write /login <patient_id> to log in\n" +
             "or write /help to get the full list of commands")
         self.bot.sendMessage(self.chat_ID, text=msg)
@@ -106,16 +94,19 @@ class MyBot:
         message = self.msg["text"]
         self.clientID = message.split()[1]
         msg = ("Patient " + str(self.clientID) + 
-               " has been logged correctly")
+               " has been logged correctly ✅")
+        # Subscribe to fall microservice
+        notification = Notification("not1", "notification", self)
+        notification.run()
         self.bot.sendMessage(self.chat_ID, text=msg)
 
     """Send a message when the command /help is issued."""
     def help(self):
         
-        help_message = ("*This is your Parkinson Helper Bot Help menu!*\n\n"
+        help_message = ("*This is your Parkinson Helper Bot Help menu!\n"
                         "You can perform the following actions:\n"
-                        "- '/stats': Get your health statistics\n"
-                        "- '/login': Log in with your patient ID\n"
+                        "- '/stats': Get your health statistics 📈\n"
+                        "- '/login': Log in with your patient ID 🪪\n"
                         )
 
         self.bot.sendMessage(self.chat_ID, text=help_message)
@@ -123,7 +114,7 @@ class MyBot:
     """Get the statistics"""
     def stats(self):
 
-        msg = "Retrieving the last sensor stats...\n"
+        msg = "📊 Retrieving the last sensor stats...\n"
         self.bot.sendMessage(self.chat_ID, text=msg)
 
         uri_broker = 'http://localhost:8080/broker'
@@ -137,23 +128,23 @@ class MyBot:
         print("Subscribed to patient: " + topic)
 
 class Notification(threading.Thread):
-    def __init__(self, ThreadID, name):
+    def __init__(self, ThreadID, name, telebot_instance):
         """Initialise thread with MQTT data."""
         threading.Thread.__init__(self)
         self.ThreadID = ThreadID
         self.name = name
-        with open(CONF, "r") as f:
-            config = json.loads(f.read())
-        self.cat_url = config["cat_ip"]
-        self.cat_port = config["cat_port"]
-        self.topic = config["topic"]
-        (self.broker_ip, mqtt_port) = broker_info(self.cat_url, self.cat_port)
-        self.mqtt_port = int(mqtt_port)
-
+        uri_broker = 'http://localhost:8080/broker'
+        settings = requests.get(uri_broker).json()
+        self.port = int(settings["mqtt_port"])
+        self.broker = settings["IP"]
+        self.clientID = telebot_instance.clientID
+        self.topic = "ParkinsonHelper/" + self.clientID +"/actuator/fall"
+        self.telebot_instance = telebot_instance
+        
     def run(self):
         """Run thread."""
-        sub = MQTTsubscriber("telegrambot", self.broker_ip, self.mqtt_port,
-                             self.topic, self.cat_url, self.cat_port)
+        sub = MQTTsubscriber(self.clientID, self.broker, self.port,
+                             self.topic, self.telebot_instance)
         sub.start()
 
         while sub.loop_flag:
@@ -206,29 +197,41 @@ class MQTTsubscriber(object):
 
         sensorParameters = sensor_id.split('/')
         receivedActuator = sensorParameters[1]
+        if (msg.topic == "ParkinsonHelper/" + self.clientID +"/actuator/statistics" ):
+            patientNumber = int(self.clientID.replace("patient", ''))
+            waistSensorName = "waist_acc" + str(patientNumber)
+            wristSensorName = "wrist_acc" + str(patientNumber)
+            pressureSensorName = "pressure" + str(patientNumber)
+            print(waistSensorName)
+            if(receivedActuator == waistSensorName):
+                self.waist_acc_received = 1
+                msg_to_send = "Printing the Waist Accelerometer values for the last 30s\n" +\
+                "Received at: "
+            if(receivedActuator == wristSensorName):
+                self.wrist_acc_received = 1
+                msg_to_send = "Printing the Waist Accelerometer values for the last 30s\n" +\
+                "Received at: "
+            if(receivedActuator == pressureSensorName):
+                self.pressure_received = 1
+                msg_to_send = "Printing the Pressure values for the last 30s\n" +\
+                "Received at: "
 
-        patientNumber = int(self.clientID.replace("patient", ''))
-        waistSensorName = "waist_acc" + str(patientNumber)
-        wristSensorName = "wrist_acc" + str(patientNumber)
-        pressureSensorName = "pressure" + str(patientNumber)
-        print(waistSensorName)
-        if(receivedActuator == waistSensorName):
-            self.waist_acc_received = 1
-            msg_to_send = "Printing the Waist Accelerometer values for the last 60s\n" +\
-            "Received at: "
-        if(receivedActuator == wristSensorName):
-            self.wrist_acc_received = 1
-            msg_to_send = "Printing the Waist Accelerometer values for the last 60s\n" +\
-            "Received at: "
-        if(receivedActuator == pressureSensorName):
-            self.pressure_received = 1
-            msg_to_send = "Printing the Pressure values for the last 60s\n" +\
-            "Received at: "
+            msg_to_send = msg_to_send + str(sensor_info["e"][0]["timeStamp"]) + '\n' + \
+            str(sensor_info["e"][0]["value"])
+            print(msg_to_send)
+            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=msg_to_send)
+            if(self.waist_acc_received == self.wrist_acc_received == self.pressure_received == 1):
+                self.waist_acc_received = 0
+                self.wrist_acc_received = 0
+                self.pressure_received = 0
+                self.stop()
+        
+        elif(msg.topic == "ParkinsonHelper/" + self.clientID +"/actuator/fall" ):
+            print("fall notification")
+            msg_to_send = "⚠️ATTENTION: " + self.clientID + "has suffered a fall!"
+            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=msg_to_send)
 
-        msg_to_send = msg_to_send + str(sensor_info["e"][0]["timeStamp"]) + '\n' + \
-        str(sensor_info["e"][0]["value"])
-        print(msg_to_send)
-        self.telebot.bot.sendMessage(self.telebot.chat_ID, text=msg_to_send)
+
 
 
 def broker_info(url, port):
@@ -245,32 +248,9 @@ def broker_info(url, port):
 
 
 def main():
-    """Setup and start the bot.
-
-    Run the bot until you press Ctrl-C or the process receives SIGINT,
-    SIGTERM or SIGABRT. This should be used most of the time, since
-    start_polling() is non-blocking and will stop the bot gracefully.
-    """
-    
-    # Activate different commands.
-    #dp.add_handler(CommandHandler("start", start))
-    #dp.add_handler(CommandHandler("help", help))
-    #dp.add_handler(CommandHandler("status", status, pass_args=True))
-    #dp.add_handler(CommandHandler("values", values, pass_args=True))
-    #dp.add_handler(CommandHandler("irrigate", irrigation))
-
-    # Log all errors.
-    #dp.add_error_handler(error)
-
-    # Start the Bot.
-    #updater.start_polling()
 
     telebot = MyBot()
     
-    #notification = Notification("not1", "notification")
-    #notification.start()
-
-    #updater.idle()
     while True:
         pass
 

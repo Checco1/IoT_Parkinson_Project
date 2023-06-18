@@ -102,9 +102,8 @@ class fall_management():
         print('Subscribed to' + self.topic)
 
     def publisher(self, msg):
-        topic = self.actuators_topic
-        topic.replace( "PATIENT_ID", self.receivedPatientID)
-        self._paho_mqtt.publish(self.actuators_topic, msg, 2)
+        topic = self.actuators_topic.replace( "PATIENT_ID", self.receivedPatientID)
+        self._paho_mqtt.publish(topic, msg, 2)
         print("published: " + str(msg) + " on " + self.actuators_topic)
 
     def stop(self):

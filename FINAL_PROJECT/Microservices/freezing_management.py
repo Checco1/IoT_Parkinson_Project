@@ -99,8 +99,7 @@ class freezing_management():
         print('Subscribed to' + self.topic)
 
     def publisher(self, msg):
-        topic = self.actuators_topic
-        topic.replace( "PATIENT_ID", self.receivedPatientID)
+        topic = self.actuators_topic.replace( "PATIENT_ID", self.receivedPatientID)
         self._paho_mqtt.publish(topic, msg, 2)
         print("published: " + str(msg) + " on " + self.actuators_topic)
 
