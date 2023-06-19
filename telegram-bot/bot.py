@@ -8,6 +8,7 @@ import numpy as np
 import threading
 import telepot
 from telepot.loop import MessageLoop
+from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from pathlib import Path
 
 P = Path(__file__).parent.absolute()
@@ -57,59 +58,148 @@ class MyPublisher(object):
 class MyBot:
     def __init__(self):
         
+        self.flag = 0
+        self.position = "home_page"
         self.chatID = 0
+        self.lastmsg = 0
         self.clientID = ""
         self.msg = {}
 
         # Local token
         self.token = "6033951332:AAG2vwBOhgkv14NJbXM0csj7-0up6-ief9E"
         self.bot = telepot.Bot(self.token)
-        MessageLoop(self.bot,{'chat': self.on_chat_message}).run_as_thread()
+        MessageLoop(self.bot,{'chat': self.on_chat_message, 'callback_query': self.on_callback_query}).run_as_thread()
 
     def on_chat_message(self,msg):
         content_type, chat_type ,self.chat_ID = telepot.glance(msg)
         self.msg = msg
+        print (msg)
         message=msg['text']
         if (message == "/start"):
             self.start()
         elif (message == "/help"):
             self.help()
-        elif(message.find("/login") != -1):
-            self.patientID()
         elif(message == "/stats"):
             self.stats()
+        else:
+            if self.flag == 1:
+                self.patientID()
+
+
+    def on_callback_query(self, msg):
+        query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
+        print('Callback Query:', query_id, from_id, query_data)
+        if (query_data == "doctor"):
+            self.doctor()
+        elif (query_data == "patient"):
+            self.patient_login()
+        elif (query_data == "back"):
+            self.undo()
+           
+        
+        #Example of Notification
+        #self.bot.answerCallbackQuery(query_id, text='Got it')
 
     """Send a message when the command /start is issued."""
     def start(self):
-        
-        msg = ("Welcome to the Parkinson Helper bot 🏥\n" +
-            "Please write /login <patient_id> to log in\n" +
-            "or write /help to get the full list of commands")
-        self.bot.sendMessage(self.chat_ID, text=msg)
-        
+        if (self.position != "home_page"):
+            self.lastmsg = self.lastmsg["message_id"]
+            self.bot.deleteMessage((self.chat_ID, self.lastmsg))
 
-    """Send a message when the command /login is issued."""
+        self.position = "home_page"
+
+        msg = ("Welcome to the Parkinson Helper bot 🏥\n" +
+               "Touch your credentials or write /help to get the full list of commands")
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                   [InlineKeyboardButton(text='Doctor', callback_data='doctor'),InlineKeyboardButton(text='Patient', callback_data='patient')],
+               ])
+
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
+        
+    def doctor(self):
+        
+        self.position = "doctor_page"
+
+        msg = ("This is the doctor section 👨🏼‍⚕️\n" + 
+               "Please select the funcionality:\n")
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                   [InlineKeyboardButton(text='MQTT', callback_data='mqtt'),InlineKeyboardButton(text='ThingSpeak', callback_data='ts')],
+                   [InlineKeyboardButton(text='Back', callback_data='back')]
+               ])
+        """Procedure to delete the last message"""
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
+    
+    def patient_login(self):
+
+        self.position = "patient_page"
+
+        msg = ("This is the patient section 🙎🏻‍♂️\n" +
+               "Please write your Patient ID. \n" +
+               "It must be \"patient_N\" where N is your number\n")
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+                   InlineKeyboardButton(text='Back', callback_data='back')]])
+        
+        self.flag = 1
+        
+        """Procedure to delete the last message"""
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
+
+    """Send a message when the patient insert its information"""
     def patientID(self):
-        self.bot.sendMessage(self.chat_ID, text="Login")
-        message = self.msg["text"]
-        self.clientID = message.split()[1]
-        msg = ("Patient " + str(self.clientID) + 
-               " has been logged correctly ✅")
+        self.position = "login_page"
+        
+        self.flag = 0
+        
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))   
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text="Login...")
+        
+        self.clientID = self.msg["text"]
         # Subscribe to fall microservice
         notification = Notification("not1", "notification", self)
         notification.run()
-        self.bot.sendMessage(self.chat_ID, text=msg)
+
+        msg = ("Patient " + str(self.clientID) + 
+               " has been logged correctly ✅")
+        
+        """Procedure to delete the last message"""
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
+        self.lastmsg =  self.bot.sendMessage(self.chat_ID, text=msg)
+
+        self.patient_menu()
+    
+    """Menu with all possible actions for the patient"""
+    def patient_menu(self):
+        
+
+
+
+
+        pass
 
     """Send a message when the command /help is issued."""
     def help(self):
+        self.position = "help_page"
         
         help_message = ("*This is your Parkinson Helper Bot Help menu!\n"
                         "You can perform the following actions:\n"
                         "- '/stats': Get your health statistics 📈\n"
                         "- '/login': Log in with your patient ID 🪪\n"
                         )
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text='Back', callback_data='back')]])
 
-        self.bot.sendMessage(self.chat_ID, text=help_message)
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=help_message, reply_markup=keyboard)
 
     """Get the statistics"""
     def stats(self):
@@ -126,6 +216,14 @@ class MyBot:
         stats_subscriber = MQTTsubscriber(mqtt_id, broker, port, topic, self)
         stats_subscriber.start()
         print("Subscribed to patient: " + topic)
+    
+    def undo(self):
+        if (self.position == "help_page"):
+            self.start()
+        elif(self.position == "doctor_page"):
+            self.start()
+        elif(self.position == "patient_page"):
+            self.start()
 
 class Notification(threading.Thread):
     def __init__(self, ThreadID, name, telebot_instance):
@@ -230,8 +328,6 @@ class MQTTsubscriber(object):
             print("fall notification")
             msg_to_send = "⚠️ATTENTION: " + self.clientID + "has suffered a fall!"
             self.telebot.bot.sendMessage(self.telebot.chat_ID, text=msg_to_send)
-
-
 
 
 def broker_info(url, port):
