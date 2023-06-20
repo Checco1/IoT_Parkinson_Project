@@ -77,23 +77,23 @@ class freezing_management():
                 self.listOfPatients[patientNumber]["pressureFlag"] = 1
             else:
                  self.listOfPatients[patientNumber]["pressureFlag"] = 0
-            #must check is pressure is >30 (so the patient is standing up and it is not a fall episode)
-
-        if (self.sentFlag[patientNumber] == 'OFF'):
-            if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
-                self.sentFlag[patientNumber] = 'SEND_COMMAND'
-                print("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]))
-                self.publisher(json.dumps(self.structure))
-                self.listOfPatients[patientNumber]["pressureFlag"] = 0
-                self.listOfPatients[patientNumber]["waistFlag"] = 0
-        elif(self.sentFlag[patientNumber] == 'SEND_COMAND'):
-            if (self.listOfPatients[patientNumber]["waistFlag"] == 1 or self.listOfPatients[patientNumber]["pressureFlag"] == 1):
-                self.sentFlag[patientNumber] = 'KEEPS_FREEZING'
-            elif(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
-                self.sentFlag[patientNumber] = 'OFF'
-        else:
-            if(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
-                self.sentFlag[patientNumber] = 'OFF'
+           
+        if(self.receivedActuator == waistSensorName or self.receivedActuator == pressureSensorName):
+            if (self.sentFlag[patientNumber] == 'OFF'):
+                if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+                    self.sentFlag[patientNumber] = 'SEND_COMMAND'
+                    print("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]))
+                    self.publisher(json.dumps(self.structure))
+                    self.listOfPatients[patientNumber]["pressureFlag"] = 0
+                    self.listOfPatients[patientNumber]["waistFlag"] = 0
+            elif(self.sentFlag[patientNumber] == 'SEND_COMAND'):
+                if (self.listOfPatients[patientNumber]["waistFlag"] == 1 or self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+                    self.sentFlag[patientNumber] = 'KEEPS_FREEZING'
+                elif(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
+                    self.sentFlag[patientNumber] = 'OFF'
+            else:
+                if(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
+                    self.sentFlag[patientNumber] = 'OFF'
 
         return self.structure
 

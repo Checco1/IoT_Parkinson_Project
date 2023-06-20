@@ -149,6 +149,8 @@ class MyBot:
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
         self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
+        notification = Notification("not1", "notification", self)
+        notification.run()
 
     """Send a message when the patient insert its information"""
     def patientID(self):

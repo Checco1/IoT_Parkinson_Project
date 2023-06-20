@@ -82,23 +82,24 @@ class fall_management():
                 self.listOfPatients[patientNumber]["pressureFlag"] = 1
             else:
                  self.listOfPatients[patientNumber]["pressureFlag"] = 0
+        if(self.receivedActuator == waistSensorName or self.receivedActuator == pressureSensorName):
 
-        if (self.sentFlag[patientNumber] == 'OFF'):
-            if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
-                self.sentFlag[patientNumber] = 'SEND_COMMAND'
-                print("Fall situation at " + str(sensor_info["e"][0]["timeStamp"]))
-                self.publisher(json.dumps(self.structure))
-                self.listOfPatients[patientNumber]["pressureFlag"] = 0
-                self.listOfPatients[patientNumber]["waistFlag"] = 0
-        elif(self.sentFlag[patientNumber] == 'SEND_COMAND'):
-            if (self.listOfPatients[patientNumber]["waistFlag"] == 1 or self.listOfPatients[patientNumber]["pressureFlag"] == 1):
-                self.sentFlag[patientNumber] = 'KEEPS_FALLING'
-            elif(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
-                self.sentFlag[patientNumber] = 'OFF'
-        else:
-            if(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
-                self.sentFlag[patientNumber] = 'OFF'
-                 
+            if (self.sentFlag[patientNumber] == 'OFF'):
+                if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+                    self.sentFlag[patientNumber] = 'SEND_COMMAND'
+                    print("Fall situation at " + str(sensor_info["e"][0]["timeStamp"]))
+                    self.publisher(json.dumps(self.structure))
+                    self.listOfPatients[patientNumber]["pressureFlag"] = 0
+                    self.listOfPatients[patientNumber]["waistFlag"] = 0
+            elif(self.sentFlag[patientNumber] == 'SEND_COMAND'):
+                if (self.listOfPatients[patientNumber]["waistFlag"] == 1 or self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+                    self.sentFlag[patientNumber] = 'KEEPS_FALLING'
+                elif(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
+                    self.sentFlag[patientNumber] = 'OFF'
+            else:
+                if(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
+                    self.sentFlag[patientNumber] = 'OFF'
+                    
 
 
         return self.structure
@@ -149,12 +150,8 @@ if __name__ == "__main__":
     waist_topic_args = waist_topic_p_1.split('/')
     sensor_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/#'
     
-    # get client's actuators
-    #=================ASK ABOUT TELEBOT'S URI=============
-    #uri_actuators = 'http://localhost:8080/get_topics/Statistic_services/patient1'
-    #actuators_topics= requests.get(uri_actuators).json()["TeleBot"]
     actuators_topics = "ParkinsonHelper/PATIENT_ID/microservices/fall"
-    # Creating as many instances as clients, so they can comunicate with their corresponding actuator
+    
     tm = fall_management(microserviceID, port, broker, sensor_topic, actuators_topics)
     tm.start()
     tm.subscriber()

@@ -150,7 +150,6 @@ if __name__ == "__main__":
     
     actuators_topics = "ParkinsonHelper/PATIENT_ID/microservices/statistics"
 
-    # Creating as many instances as clients, so they can comunicate with their corresponding actuator
     tm = statistics_management(microserviceID, port, broker, sensors, actuators_topics)
     tm.start()
     tm.subscriber()
