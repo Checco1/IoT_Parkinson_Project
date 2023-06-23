@@ -127,7 +127,6 @@ class CreatePatient():
             [
                 {
                 "ServiceName": "TeleBot",
-                "token": "boh",
                 "Services": [
                         {
                         "ServiceType": "MQTT",
@@ -137,6 +136,7 @@ class CreatePatient():
                 },
                 {
                 "ServiceName": "ThingSpeak",
+                "BotName": "ParkinsonHelperBot",
                 "token": "boh",
                 "Services": [
                         {

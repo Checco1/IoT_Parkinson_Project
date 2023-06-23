@@ -40,7 +40,7 @@ class SFSimulator():
                 "e":
                     [
                         {
-                            "measureType":"Activation",
+                            "measureType":"Update",
                             "unit":"bool",
                             "timeStamp":"",
                             "value":"True"
