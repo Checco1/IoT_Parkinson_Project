@@ -65,6 +65,7 @@ class statistics_management():
         wristSensorName = "wrist_acc" + str(patientNumber)
         pressureSensorName = "pressure" + str(patientNumber)
 
+        self.structure["bn"] = self.receivedPatientID + '/statistics_manager'
         if(self.receivedActuator == waistSensorName):
             waist_freq = sensor_info["e"][0]["value"]
             self.listOfPatients[patientNumber]["waistBuffer"].append(waist_freq)
@@ -147,9 +148,8 @@ if __name__ == "__main__":
 
     # get client's actuators
     
-    actuators_topics = "ParkinsonHelper/PATIENT_ID/actuator/statistics"
+    actuators_topics = "ParkinsonHelper/PATIENT_ID/microservices/statistics"
 
-    # Creating as many instances as clients, so they can comunicate with their corresponding actuator
     tm = statistics_management(microserviceID, port, broker, sensors, actuators_topics)
     tm.start()
     tm.subscriber()

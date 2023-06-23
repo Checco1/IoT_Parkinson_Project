@@ -139,7 +139,7 @@ class MyBot:
 
         msg = ("This is the patient section 🙎🏻‍♂️\n" +
                "Please write your Patient ID. \n" +
-               "It must be \"patient_N\" where N is your number\n")
+               "It must be \"patientN\" where N is your number\n")
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[
                    InlineKeyboardButton(text='Back', callback_data='back')]])
         
@@ -149,21 +149,24 @@ class MyBot:
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
         self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
+        #notification = Notification("not1", "notification", self)
+        #notification.run()
 
     """Send a message when the patient insert its information"""
     def patientID(self):
         self.position = "login_page"
         
         self.flag = 0
-        
+
+        """Procedure to delete the last message"""
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))   
         self.lastmsg = self.bot.sendMessage(self.chat_ID, text="Login...")
         
         self.clientID = self.msg["text"]
         # Subscribe to fall microservice
-        notification = Notification("not1", "notification", self)
-        notification.run()
+        self.notification = Notification("not1", "notification", self)
+        self.notification.run()
 
         msg = ("Patient " + str(self.clientID) + 
                " has been logged correctly ✅")
@@ -172,17 +175,25 @@ class MyBot:
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
         self.lastmsg =  self.bot.sendMessage(self.chat_ID, text=msg)
-
+        time.sleep(1)
         self.patient_menu()
     
     """Menu with all possible actions for the patient"""
     def patient_menu(self):
+        self.position = "patient_menu"
         
-
-
-
-
-        pass
+        msg = ("This is the patient Menu 🙎🏻‍♂️\n" +
+               "Please write your Patient ID. \n" +
+               "It must be \"patientN\" where N is your number\n")
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text='Actual Measurement', callback_data='actualm'), InlineKeyboardButton(text='Daily Episodes', callback_data='daily')],
+                [InlineKeyboardButton(text='Back', callback_data='back')]
+                ])
+        
+        """Procedure to delete the last message"""
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
+        self.lastmsg =  self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
 
     """Send a message when the command /help is issued."""
     def help(self):
@@ -191,7 +202,6 @@ class MyBot:
         help_message = ("*This is your Parkinson Helper Bot Help menu!\n"
                         "You can perform the following actions:\n"
                         "- '/stats': Get your health statistics 📈\n"
-                        "- '/login': Log in with your patient ID 🪪\n"
                         )
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[
@@ -212,10 +222,10 @@ class MyBot:
         port = int(settings["mqtt_port"])
         broker = settings["IP"]
         mqtt_id = self.clientID
-        topic = "ParkinsonHelper/" + self.clientID +"/actuator/statistics"
+        topic = "ParkinsonHelper/" + self.clientID +"/microservices/statistics"
         stats_subscriber = MQTTsubscriber(mqtt_id, broker, port, topic, self)
         stats_subscriber.start()
-        print("Subscribed to patient: " + topic)
+        print("Subscribed to: " + topic)
     
     def undo(self):
         if (self.position == "help_page"):
@@ -224,6 +234,9 @@ class MyBot:
             self.start()
         elif(self.position == "patient_page"):
             self.start()
+        elif(self.position == "patient_menu"):
+            self.notification.stop()
+            self.patient_login()
 
 class Notification(threading.Thread):
     def __init__(self, ThreadID, name, telebot_instance):
@@ -236,18 +249,21 @@ class Notification(threading.Thread):
         self.port = int(settings["mqtt_port"])
         self.broker = settings["IP"]
         self.clientID = telebot_instance.clientID
-        self.topic = "ParkinsonHelper/" + self.clientID +"/actuator/fall"
+        self.topic = [("ParkinsonHelper/" + self.clientID +"/microservices/#",2),("ParkinsonHelper/" + self.clientID +"/actuators/#",2)]
         self.telebot_instance = telebot_instance
         
     def run(self):
         """Run thread."""
-        sub = MQTTsubscriber(self.clientID, self.broker, self.port,
+        self.sub = MQTTsubscriber(self.clientID, self.broker, self.port,
                              self.topic, self.telebot_instance)
-        sub.start()
+        self.sub.start()
 
-        while sub.loop_flag:
+        while self.sub.loop_flag:
             print("Waiting for connection...")
             time.sleep(1)
+    
+    def stop(self):
+        self.sub.stop()
 
 
 class MQTTsubscriber(object):
@@ -263,6 +279,7 @@ class MQTTsubscriber(object):
         self._paho_mqtt.on_connect = self.my_on_connect
         self._paho_mqtt.on_message = self.my_on_message_received
         self.loop_flag = 1
+
         self.waist_acc_received = 0
         self.wrist_acc_received = 0
         self.pressure_received = 0
@@ -275,7 +292,8 @@ class MQTTsubscriber(object):
 
     def stop(self):
         """Stop subscriber."""
-        self._paho_mqtt.unsubscribe(self.topic)
+        topics = ["ParkinsonHelper/" + self.clientID +"/microservices/#", "ParkinsonHelper/" + self.clientID +"/actuators/#"]
+        self._paho_mqtt.unsubscribe(topics)
         self._paho_mqtt.loop_stop()
         self._paho_mqtt.disconnect()
 
@@ -290,45 +308,6 @@ class MQTTsubscriber(object):
         msg_to_send = ""
         sensor_info = json.loads(msg.payload)
         print(sensor_info)
-        # Retrieve sensor and ID from the "bn field"
-        sensor_id = sensor_info["bn"]
-
-        sensorParameters = sensor_id.split('/')
-        receivedActuator = sensorParameters[1]
-        if (msg.topic == "ParkinsonHelper/" + self.clientID +"/actuator/statistics" ):
-            patientNumber = int(self.clientID.replace("patient", ''))
-            waistSensorName = "waist_acc" + str(patientNumber)
-            wristSensorName = "wrist_acc" + str(patientNumber)
-            pressureSensorName = "pressure" + str(patientNumber)
-            print(waistSensorName)
-            if(receivedActuator == waistSensorName):
-                self.waist_acc_received = 1
-                msg_to_send = "Printing the Waist Accelerometer values for the last 30s\n" +\
-                "Received at: "
-            if(receivedActuator == wristSensorName):
-                self.wrist_acc_received = 1
-                msg_to_send = "Printing the Waist Accelerometer values for the last 30s\n" +\
-                "Received at: "
-            if(receivedActuator == pressureSensorName):
-                self.pressure_received = 1
-                msg_to_send = "Printing the Pressure values for the last 30s\n" +\
-                "Received at: "
-
-            msg_to_send = msg_to_send + str(sensor_info["e"][0]["timeStamp"]) + '\n' + \
-            str(sensor_info["e"][0]["value"])
-            print(msg_to_send)
-            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=msg_to_send)
-            if(self.waist_acc_received == self.wrist_acc_received == self.pressure_received == 1):
-                self.waist_acc_received = 0
-                self.wrist_acc_received = 0
-                self.pressure_received = 0
-                self.stop()
-        
-        elif(msg.topic == "ParkinsonHelper/" + self.clientID +"/actuator/fall" ):
-            print("fall notification")
-            msg_to_send = "⚠️ATTENTION: " + self.clientID + "has suffered a fall!"
-            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=msg_to_send)
-
 
 def broker_info(url, port):
     """Get broker information.

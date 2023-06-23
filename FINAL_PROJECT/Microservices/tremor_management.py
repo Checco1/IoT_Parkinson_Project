@@ -23,7 +23,7 @@ class tremor_management():
         self.sensor_id = "default"
         self.receivedPatientID = "default"
         self.receivedActuator = "default"
-
+        self.sentFlag = ['OFF']*512
 
         self.bn = "ParkinsonHelper"
 
@@ -34,7 +34,7 @@ class tremor_management():
                             "measureType":"tremor_manager",
                             "unit":"bool",
                             "timeStamp":time.time(),
-                            "value": 0,
+                            "value": True,
                         }
                     ]
 
@@ -51,15 +51,22 @@ class tremor_management():
         self.receivedActuator = sensorParameters[1]
         patientNumber = int(self.receivedPatientID.replace("patient", ''))
         sensor_name = "wrist_acc" + str(patientNumber)
+
+        self.structure["bn"] = self.receivedPatientID + '/tremor_manager'
         if(self.receivedActuator == sensor_name):
             print(sensor_info)
             wrist_freq = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
-            self.structure["e"][0]["value"] = 0
-            if (wrist_freq >= 4): #and (wrist_freq <= 9): #must be >4 (there is no upper limit)
-                self.structure["e"][0]["value"] = 1
-                print ("Tremor situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
-                self.publisher(json.dumps(self.structure))
+            if (wrist_freq >= 4):
+                if (self.sentFlag[patientNumber] == 'OFF'):
+                    self.sentFlag[patientNumber] = 'KEEPS_TREMBLING'
+                    print ("Tremor situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                    self.publisher(json.dumps(self.structure))
+
+            else:
+                 self.sentFlag[patientNumber] = 'OFF'
+                 
+                
 
         return self.structure
 
@@ -109,7 +116,8 @@ if __name__ == "__main__":
     wrist_topic =wrist_topic_args[0]+'/+/'+wrist_topic_args[2]+'/#'
     
     dbs_topic_args = dbs_topic_p_1.split('/')
-    dbs_topic = dbs_topic_args[0] + "/PATIENT_ID/" + dbs_topic_args[2] + dbs_topic_args[3]
+    dbs_topic = dbs_topic_args[0] + "/PATIENT_ID/" + dbs_topic_args[2] + '/' + dbs_topic_args[3]
+    print(dbs_topic)
     tm = tremor_management(microserviceID, port, broker, wrist_topic, dbs_topic)
     tm.start()
     tm.subscriber()

@@ -34,12 +34,13 @@ class freezing_management():
                             "measureType": "freezing_manager",
                             "unit":"bool",
                             "timeStamp":time.time(),
-                            "value": 0,
+                            "value": True,
                         }
                     ]
 
         }
         self.listOfPatients = [{"waistFlag" : 0, "pressureFlag": 0}]*512
+        self.sentFlag = ['OFF']*512
         self.sensor_id = "default"
         self.receivedPatientID = "default"
         self.receivedActuator = "default"
@@ -56,16 +57,14 @@ class freezing_management():
         patientNumber = int(self.receivedPatientID.replace("patient", ''))
         waistSensorName = "waist_acc" + str(patientNumber)
         pressureSensorName = "pressure" + str(patientNumber)
+        self.structure["bn"] = self.receivedPatientID + '/freezing_manager'
         if(self.receivedActuator == waistSensorName):
             print(sensor_info)
             waist_time = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
-            self.structure["e"][0]["value"] = 0
             if (waist_time >= 1.5): #and (waist_time <= 1.71): #must check if time last peak is > 1.5
-                self.structure["e"][0]["value"] = 1
-                print ("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
+                print("Waist acceleration is too high")
                 self.listOfPatients[patientNumber]["waistFlag"] = 1
-                self.publisher(json.dumps(self.structure))
             else:
                  self.listOfPatients[patientNumber]["waistFlag"] = 0
 
@@ -73,20 +72,28 @@ class freezing_management():
             print(sensor_info)
             pressure = sensor_info["e"][0]["value"]
             self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
-            self.structure["e"][0]["value"] = 0
             if (pressure > 30):
-                self.structure["e"][0]["value"] = 1
                 print ("Pressure over 30 detected at " + str(sensor_info["e"][0]["timeStamp"]) + "s")
                 self.listOfPatients[patientNumber]["pressureFlag"] = 1
             else:
-                 self.listOfPatients[patientNumber]["pressureFlag"] = 1
-            #must check is pressure is >30 (so the patient is standing up and it is not a fall episode)
-
-        if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
-            print("Fall situation at " + str(sensor_info["e"][0]["timeStamp"]))
-            self.publisher(json.dumps(self.structure))
-            self.listOfPatients[patientNumber]["pressureFlag"] = 0
-            self.listOfPatients[patientNumber]["waistFlag"] = 0
+                 self.listOfPatients[patientNumber]["pressureFlag"] = 0
+           
+        if(self.receivedActuator == waistSensorName or self.receivedActuator == pressureSensorName):
+            if (self.sentFlag[patientNumber] == 'OFF'):
+                if (self.listOfPatients[patientNumber]["waistFlag"] == 1 and self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+                    self.sentFlag[patientNumber] = 'SEND_COMMAND'
+                    print("Freezing situation at " + str(sensor_info["e"][0]["timeStamp"]))
+                    self.publisher(json.dumps(self.structure))
+                    self.listOfPatients[patientNumber]["pressureFlag"] = 0
+                    self.listOfPatients[patientNumber]["waistFlag"] = 0
+            elif(self.sentFlag[patientNumber] == 'SEND_COMAND'):
+                if (self.listOfPatients[patientNumber]["waistFlag"] == 1 or self.listOfPatients[patientNumber]["pressureFlag"] == 1):
+                    self.sentFlag[patientNumber] = 'KEEPS_FREEZING'
+                elif(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
+                    self.sentFlag[patientNumber] = 'OFF'
+            else:
+                if(self.listOfPatients[patientNumber]["waistFlag"] == 0 and self.listOfPatients[patientNumber]["pressureFlag"] == 0):
+                    self.sentFlag[patientNumber] = 'OFF'
 
         return self.structure
 
@@ -101,7 +108,7 @@ class freezing_management():
     def publisher(self, msg):
         topic = self.actuators_topic.replace( "PATIENT_ID", self.receivedPatientID)
         self._paho_mqtt.publish(topic, msg, 2)
-        print("published: " + str(msg) + " on " + self.actuators_topic)
+        print("published: " + str(msg) + " on " + topic)
 
     def stop(self):
         self._paho_mqtt.unsubscribe(self.topic)
