@@ -266,26 +266,29 @@ class MySubscriber(object):
                         self.db.update_data(str(write_api), field, values)
                         
                 elif topic == "WaistAccStats":
-                    values = float(i["value"])
-                    print(values)
+                    value = float(i["value"])
+                    print(value)
                     #field=1
                     #std =float(i["value"]["std"])
                     #values=[mean,std]
+                    values=value.mean()
                     field=2
                     self.db.update_data(str(write_api), field, values)
                     
                 elif topic == "WristAccStats":
-                    values = float(i["value"])
-                    print(values)
+                    value = float(i["value"])
+                    print(value)
                     #std =float(i["value"]["std"])
                     #fieldM=7
                     #values=[mean,std]
+                    values=value.mean()
                     field = 8
                     self.db.update_data(str(write_api), field, values)
                     
                 elif topic == "FeetPressureStats":
-                    values = float(i["value"])
-                    print(values)
+                    value = float(i["value"])
+                    print(value)
+                    values=value.mean()
                     field=3
                     self.db.update_data(str(write_api), field, values)
                     #std =float(i["value"]["std"])
