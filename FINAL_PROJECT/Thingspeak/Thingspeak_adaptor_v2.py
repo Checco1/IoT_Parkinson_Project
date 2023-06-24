@@ -10,6 +10,8 @@ import datetime
 import threading
 import requests
 import cherrypy
+import ast
+import statistics
 from pathlib import Path
 
 P = Path(__file__).parent.absolute()
@@ -22,10 +24,18 @@ FILE = P / "conf.json"
 # Functions
 def data_publish(list, url):
     """Take a list of jsons and publish them via REST on ThingSpeak using post method."""
+    url=url + "?api_key=JBYHOQB4NQ30ABSO"
     for item in list:
         print("Publishing:")
         print(json.dumps(item))
-        requests.post(url, data=item)
+        response=requests.post(url, data=item)
+        """print(item)
+        print(response )
+        print(response.text)
+        print(response.content)"""
+    
+        
+    
 
 
 def read_file(filename):
@@ -66,49 +76,6 @@ class Timer(threading.Thread):
             time_flag = 0  # Stop timer.
             time.sleep(1)  # 1-sec cooldown.
 
-# Threads
-class SendData(threading.Thread):
-    """ Data are collected for 15 seconds and then published.
-    So we call the class MySubscriber and the methods
-    """
-
-    def __init__(self, ThreadID, name):
-        """Initialise thread widh ID and name."""
-        threading.Thread.__init__(self)
-        self.ThreadID = ThreadID
-        self.name = name
-        (self.url, self.port, self.topic, self.ts_url) = read_file(FILE)
-        (self.broker_ip, mqtt_port) = broker_info(self.url, self.port)
-        self.mqtt_port = int(mqtt_port)
-
-    def run(self):
-        """Run thread."""
-        global time_flag
-
-        # Start subscriber.
-        sub = MySubscriber("Thingspeak", self.topic, self.broker_ip)
-        sub.start()
-
-        while True:
-
-            while time_flag == 0: 
-                """# wait untill the time_flag becomes 1, so every 15 sec except the first cycle that we have
-                global time_flag = 1"""
-                time.sleep(.1)
-
-            # waiting for the connection. when the system is connected to the broker, loop_flag becomes false
-            while loop_flag:
-                print("Waiting for connection...")
-                time.sleep(.01)
-
-            # Collecting data for 15 seconds. it stops when the time_flag becomes 0 (so after 15 sec)
-            while time_flag == 1:
-                time.sleep(.1)
-
-            # Publish json data on thingspeak. Different patient=different channel
-            data_publish(sub.send_data(), self.ts_url)
-
-
 class Database(object):
     """Manage a database with data from sensors.
     Create the database, collect data for 15 sec and then publish the data on thingspeak in a json format.
@@ -141,6 +108,7 @@ class Database(object):
         data = {
             "write_api": write_api,
             "created_at": self.created_at,
+            
         }
         return data
 
@@ -150,13 +118,14 @@ class Database(object):
         up = {
                 "field" + str(fieldID): value,
              }
-
         cnt = 0
 
         for data in self.list_data:
             if data["write_api"] == write_api:
                 self.list_data[cnt].update(up)
-            cnt += 1 
+            cnt += 1
+    
+        
 
     def reset(self):
         """Reset lists and time."""
@@ -186,7 +155,7 @@ class MySubscriber(object):
         """Start subscriber."""
         self._paho_mqtt.connect(self.messageBroker, 1883)
         self._paho_mqtt.loop_start()
-        self._paho_mqtt.subscribe(self.topic, 2)
+        self._paho_mqtt.subscribe(self.topic, 0)
 
     def stop(self):
         """Stop subscriber."""
@@ -231,7 +200,7 @@ class MySubscriber(object):
         #info = json.loads(requests.get(string).text)
         #write_api = info["writeAPI"]
 
-        write_api = "3D509BA5PQ8SQ4EU"
+        write_api = "JBYHOQB4NQ30ABSO"
 
         # Update values in the database.
         self.db.create(patientID, str(write_api))
@@ -266,29 +235,27 @@ class MySubscriber(object):
                         self.db.update_data(str(write_api), field, values)
                         
                 elif topic == "WaistAccStats":
-                    value = float(i["value"])
-                    print(value)
+                    value = i["value"]
                     #field=1
                     #std =float(i["value"]["std"])
                     #values=[mean,std]
-                    values=value.mean()
-                    field=2
+                    values=ast.literal_eval(value)
+                    field=1
                     self.db.update_data(str(write_api), field, values)
                     
                 elif topic == "WristAccStats":
-                    value = float(i["value"])
-                    print(value)
+                    value = i["value"]
                     #std =float(i["value"]["std"])
                     #fieldM=7
                     #values=[mean,std]
-                    values=value.mean()
-                    field = 8
+                    values=ast.literal_eval(value)
+                    field = 2
                     self.db.update_data(str(write_api), field, values)
                     
-                elif topic == "FeetPressureStats":
-                    value = float(i["value"])
-                    print(value)
-                    values=value.mean()
+                elif topic == "PressureStats":
+                    value = i["value"]
+                    values=ast.literal_eval(value)
+                    #print(values)
                     field=3
                     self.db.update_data(str(write_api), field, values)
                     #std =float(i["value"]["std"])
@@ -298,12 +265,81 @@ class MySubscriber(object):
                     
                 #self.db.update_data(str(write_api), field, values)
 
+# Threads
+class SendData(threading.Thread):
+    """ Data are collected for 15 seconds and then published.
+    So we call the class MySubscriber and the methods
+    """
 
+    def __init__(self, ThreadID, name):
+        """Initialise thread widh ID and name."""
+        threading.Thread.__init__(self)
+        self.ThreadID = ThreadID
+        self.name = name
+        (self.url, self.port, self.topic, self.ts_url) = read_file(FILE)
+        (self.broker_ip, mqtt_port) = broker_info(self.url, self.port)
+        self.mqtt_port = int(mqtt_port)
 
+    def run(self):
+        """Run thread."""
+        global time_flag
 
+        # Start subscriber.
+        sub = MySubscriber("Thingspeak", self.topic, self.broker_ip)
+        sub.start()
 
+        while True:
+
+            while time_flag == 0: 
+                """# wait untill the time_flag becomes 1, so every 15 sec except the first cycle that we have
+                global time_flag = 1"""
+                time.sleep(.1)
+
+            # waiting for the connection. when the system is connected to the broker, loop_flag becomes false
+            while loop_flag:
+                print("Waiting for connection...")
+                time.sleep(.01)
+
+            # Collecting data for 15 seconds. it stops when the time_flag becomes 0 (so after 15 sec)
+            while time_flag == 1:
+                time.sleep(.1)
+
+            # Publish json data on thingspeak. Different patient=different channel
+            data_publish(sub.send_data(), self.ts_url)
+        
 
 if __name__ == "__main__":
+
+    """api_key="5LWQ3IHY3DY8TILH"
+    url=f"https://api.thingspeak.com/channels.json"
+    data={
+        "api_key":api_key,
+        "name":"paziente N",
+        "field1":"waistStats",
+        "field2":"wristStats",
+        "field3":"pressureStats",
+        "field4":"fall_episodes",
+        "field5":"tremor_episode",
+        "field6":"freezing_episode"
+    }
+    response=requests.post(url,json=data)
+    if response.status_code==200:
+        new_channel=response.json()
+        channel_id=new_channel["id"]
+        print("New channel added with id: ",channel_id)
+    else:
+        print("Error in the channel creation")
+    url=f"https://api.thingspeak.com/channels/{channel_id}.json"
+    params={"api_key":api_key}
+    response=requests.get(url,params=params)
+    
+    channel_info=response.json()
+    write_api=channel_info["api_keys"][0]["api_key"]
+    read_api=channel_info["api_keys"][1]["api_key"]
+    print("Write api: ",write_api)
+    print("Read api: ",read_api) """
+    
+
     thread1 = SendData(1, "SendData")
     thread1.start()
     thread2 = Timer(2, "Timer")
