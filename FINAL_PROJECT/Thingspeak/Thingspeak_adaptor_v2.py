@@ -17,6 +17,7 @@ from pathlib import Path
 P = Path(__file__).parent.absolute()
 loop_flag = 1
 time_flag = 1
+write_api=""
 #CHERRY_CONF = str(P / "cherrypyconf")
 FILE = P / "conf.json"
 
@@ -24,7 +25,7 @@ FILE = P / "conf.json"
 # Functions
 def data_publish(list, url):
     """Take a list of jsons and publish them via REST on ThingSpeak using post method."""
-    url=url + "?api_key=JBYHOQB4NQ30ABSO"
+    url=url + f"?api_key={write_api}"
     for item in list:
         print("Publishing:")
         print(json.dumps(item))
@@ -53,7 +54,6 @@ def broker_info(url, port):
     broker_ip = "test.mosquitto.org"
     mqtt_port = 1883
     return broker_ip, mqtt_port
-
 
 # Classes
 class Timer(threading.Thread):
@@ -123,9 +123,7 @@ class Database(object):
         for data in self.list_data:
             if data["write_api"] == write_api:
                 self.list_data[cnt].update(up)
-            cnt += 1
-    
-        
+            cnt += 1     
 
     def reset(self):
         """Reset lists and time."""
@@ -199,9 +197,9 @@ class MySubscriber(object):
         #string = ("http://" + self.url + ":" + self.port +  str(thingspeakID))
         #info = json.loads(requests.get(string).text)
         #write_api = info["writeAPI"]
-
+        global write_api
         write_api = "JBYHOQB4NQ30ABSO"
-
+        
         # Update values in the database.
         self.db.create(patientID, str(write_api))
 
@@ -242,7 +240,8 @@ class MySubscriber(object):
                     values=ast.literal_eval(value)
                     field=1
                     self.db.update_data(str(write_api), field, values)
-                    
+
+                        
                 elif topic == "WristAccStats":
                     value = i["value"]
                     #std =float(i["value"]["std"])
@@ -338,7 +337,6 @@ if __name__ == "__main__":
     read_api=channel_info["api_keys"][1]["api_key"]
     print("Write api: ",write_api)
     print("Read api: ",read_api) """
-    
 
     thread1 = SendData(1, "SendData")
     thread1.start()
@@ -346,3 +344,25 @@ if __name__ == "__main__":
     thread2.start()
     #thread3 = CherryThread(3, "CherryServer")
     #thread3.start()
+
+
+    """ read values of field od the patient
+    read_api="E7JRP689C2U0W11U"
+    channelID=2202640
+    fieldID=4
+    url=f"https://api.thingspeak.com/channels/{channelID}/fields/{fieldID}.json?api_key={read_api}"# gett alla values of the field of the last day
+    start_date="2023-06-27"
+    end_date="2023-06-27"
+    url=f"https://api.thingspeak.com/channels/{channelID}/fields/{fieldID}.json?api_key={read_api}&start={start_date}&end={end_date}"#get data of field of the day
+    url=f"https://api.thingspeak.com/channels/{channelID}/fields/{fieldID}.json?api_key={read_api}&result=10" #get last 10 values
+    #In the start day and end day, if you specify the hours, you'll get the values of the hours range  
+    response=requests.get(url)
+    data=response.json()
+    feeds = data['feeds']
+    
+    
+    values = [feed[f'field{fieldID}'] for feed in feeds]
+    print(values)
+    filtered_data = [x for x in values if x is not None ] #to create a list of value without values=None
+    
+    #print("DATA from field%s = ",(fieldID,data))"""
