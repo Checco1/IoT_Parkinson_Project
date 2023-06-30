@@ -114,7 +114,7 @@ class CreatePatient():
             requests.post(request,self.device)
             print(f"Device {listDevices[device]} posted!")
 
-    def CreateStatisticServices(self, name, code_f):
+    def CreateStatisticServices(self, name, code_f, channel_id, write_api, read_api, url):
         print("\n")
         print(f"Adding mandatory services for the patient {name} with ID code {code_f}")
 
@@ -127,7 +127,7 @@ class CreatePatient():
             [
                 {
                 "ServiceName": "TeleBot",
-                "token": "boh",
+                "BotName": "ParkinsonHelperBot",
                 "Services": [
                         {
                         "ServiceType": "MQTT",
@@ -137,7 +137,10 @@ class CreatePatient():
                 },
                 {
                 "ServiceName": "ThingSpeak",
-                "token": "boh",
+                "Channel_ID": channel_id,
+                "URL": url,
+                "WriteApi": write_api,
+                "ReadApi": read_api,
                 "Services": [
                         {
                         "serviceProvider": "Statistic_manager",
@@ -169,3 +172,36 @@ class CreatePatient():
         requests.post(request, self.stats)
         print(self.stats)
         print("Services added!")
+
+
+    def CreateTSChannel(self, ID):
+        api_key="5LWQ3IHY3DY8TILH"
+        url=f"https://api.thingspeak.com/channels.json"
+        data={
+            "api_key":api_key,
+            "name":"paziente"+str(ID),
+            "field1":"waistStats",
+            "field2":"wristStats",
+            "field3":"pressureStats",
+            "field4":"fall_episodes",
+            "field5":"tremor_episode",
+            "field6":"freezing_episode"
+        }
+        response=requests.post(url,json=data)
+        if response.status_code==200:
+            new_channel=response.json()
+            channel_id=new_channel["id"]
+            print("New channel added with id: ",channel_id)
+        else:
+            print("Error in the channel creation")
+        url=f"https://api.thingspeak.com/channels/{channel_id}.json"
+        params={"api_key":api_key}
+        response=requests.get(url,params=params)
+        
+        channel_info=response.json()
+        write_api=channel_info["api_keys"][0]["api_key"]
+        read_api=channel_info["api_keys"][1]["api_key"]
+        print("Write api: ",write_api)
+        print("Read api: ",read_api)
+
+        return channel_id, write_api, read_api, url
