@@ -1,3 +1,501 @@
 {
-  "patients_list": []
+  "patients_list": [
+    {
+      "patientName": "candela",
+      "patientID": "patient1",
+      "patientDocument": "a",
+      "device_list": [
+        {
+          "deviceID": "waist_acc1",
+          "deviceType": "sensor",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/waist_acc1"
+            }
+          ]
+        },
+        {
+          "deviceID": "wrist_acc1",
+          "deviceType": "sensor",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/wrist_acc1"
+            }
+          ]
+        },
+        {
+          "deviceID": "pressure1",
+          "deviceType": "sensor",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/sensors/pressure1"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs1",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient1/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient1/actuators/dbs1"
+              }
+            }
+          ]
+        },
+        {
+          "deviceID": "sf1",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient1/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient1/actuators/sf1"
+              }
+            }
+          ]
+        }
+      ],
+      "Statistic_services": [
+        {
+          "ServiceName": "TeleBot",
+          "BotName": "ParkinsonHelperBot",
+          "Services": [
+            {
+              "ServiceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/microservices/fall"
+            }
+          ]
+        },
+        {
+          "ServiceName": "ThingSpeak",
+          "Channel_ID": 2209957,
+          "URL": "https://api.thingspeak.com/channels/2209957.json",
+          "WriteApi": "DH64XCSEST7OD1FS",
+          "ReadApi": "KAX5UHJAMQUZ11OC",
+          "Services": [
+            {
+              "serviceProvider": "Statistic_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/microservices/statistics"
+            },
+            {
+              "serviceProvider": "Fall_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/microservices/fall"
+            },
+            {
+              "serviceProvider": "Freezing_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/microservices/freezing"
+            },
+            {
+              "serviceProvider": "Tremor_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient1/microservices/tremor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "patientName": "candela",
+      "patientID": "patient2",
+      "patientDocument": "m",
+      "device_list": [],
+      "Statistic_services": []
+    },
+    {
+      "patientName": "candela",
+      "patientID": "patient3",
+      "patientDocument": "m",
+      "device_list": [
+        {
+          "deviceID": "waist_acc3",
+          "deviceType": "sensor",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/sensors/waist_acc3"
+            }
+          ]
+        },
+        {
+          "deviceID": "wrist_acc3",
+          "deviceType": "sensor",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/sensors/wrist_acc3"
+            }
+          ]
+        },
+        {
+          "deviceID": "pressure3",
+          "deviceType": "sensor",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/sensors/pressure3"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs3",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient3/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient3/actuators/dbs3"
+              }
+            }
+          ]
+        },
+        {
+          "deviceID": "sf3",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient3/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient3/actuators/sf3"
+              }
+            }
+          ]
+        }
+      ],
+      "Statistic_services": [
+        {
+          "ServiceName": "TeleBot",
+          "BotName": "ParkinsonHelperBot",
+          "Services": [
+            {
+              "ServiceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/microservices/fall"
+            }
+          ]
+        },
+        {
+          "ServiceName": "ThingSpeak",
+          "Channel_ID": 2209962,
+          "URL": "https://api.thingspeak.com/channels/2209962.json",
+          "WriteApi": "1S8XVXOHDQULMQ6Y",
+          "ReadApi": "GHNSLMZL95I0K2DA",
+          "Services": [
+            {
+              "serviceProvider": "Statistic_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/microservices/statistics"
+            },
+            {
+              "serviceProvider": "Fall_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/microservices/fall"
+            },
+            {
+              "serviceProvider": "Freezing_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/microservices/freezing"
+            },
+            {
+              "serviceProvider": "Tremor_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient3/microservices/tremor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "patientName": "c",
+      "patientID": "patient4",
+      "patientDocument": "d",
+      "device_list": [
+        {
+          "deviceID": "waist_acc4",
+          "deviceType": "sensor",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient4/sensors/waist_acc4"
+            }
+          ]
+        },
+        {
+          "deviceID": "wrist_acc4",
+          "deviceType": "sensor",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient4/sensors/wrist_acc4"
+            }
+          ]
+        },
+        {
+          "deviceID": "pressure4",
+          "deviceType": "sensor",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient4/sensors/pressure4"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs4",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient4/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient4/actuators/dbs4"
+              }
+            }
+          ]
+        },
+        {
+          "deviceID": "sf4",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient4/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient4/actuators/sf4"
+              }
+            }
+          ]
+        }
+      ],
+      "Statistic_services": []
+    },
+    {
+      "patientName": "n",
+      "patientID": "patient5",
+      "patientDocument": "n",
+      "device_list": [
+        {
+          "deviceID": "waist_acc5",
+          "deviceType": "sensor",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient5/sensors/waist_acc5"
+            }
+          ]
+        },
+        {
+          "deviceID": "wrist_acc5",
+          "deviceType": "sensor",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient5/sensors/wrist_acc5"
+            }
+          ]
+        },
+        {
+          "deviceID": "pressure5",
+          "deviceType": "sensor",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient5/sensors/pressure5"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs5",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient5/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient5/actuators/dbs5"
+              }
+            }
+          ]
+        },
+        {
+          "deviceID": "sf5",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient5/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient5/actuators/sf5"
+              }
+            }
+          ]
+        }
+      ],
+      "Statistic_services": []
+    },
+    {
+      "patientName": "patient",
+      "patientID": "patient6",
+      "patientDocument": "n",
+      "device_list": [
+        {
+          "deviceID": "waist_acc6",
+          "deviceType": "sensor",
+          "measureType": "TimeLastPeak",
+          "unit": "s",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/sensors/waist_acc6"
+            }
+          ]
+        },
+        {
+          "deviceID": "wrist_acc6",
+          "deviceType": "sensor",
+          "measureType": "MeanFrequency",
+          "unit": "Hz",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/sensors/wrist_acc6"
+            }
+          ]
+        },
+        {
+          "deviceID": "pressure6",
+          "deviceType": "sensor",
+          "measureType": "FeetPressure",
+          "unit": "kg",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/sensors/pressure6"
+            }
+          ]
+        },
+        {
+          "deviceID": "dbs6",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient6/microservices/tremor",
+                "update_check": "ParkinsonHelper/patient6/actuators/dbs6"
+              }
+            }
+          ]
+        },
+        {
+          "deviceID": "sf6",
+          "deviceType": "actuator",
+          "measureType": "Activation",
+          "unit": "bool",
+          "Services": [
+            {
+              "serviceType": "MQTT",
+              "topic": {
+                "activation": "ParkinsonHelper/patient6/microservices/freezing",
+                "update_check": "ParkinsonHelper/patient6/actuators/sf6"
+              }
+            }
+          ]
+        }
+      ],
+      "Statistic_services": [
+        {
+          "ServiceName": "TeleBot",
+          "BotName": "ParkinsonHelperBot",
+          "Services": [
+            {
+              "ServiceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/microservices/fall"
+            }
+          ]
+        },
+        {
+          "ServiceName": "ThingSpeak",
+          "Channel_ID": 2210016,
+          "URL": "https://api.thingspeak.com/channels/2210016.json",
+          "WriteApi": "3H3EITUT5D22DAFP",
+          "ReadApi": "J0KGI0GD2XWSZLYW",
+          "Services": [
+            {
+              "serviceProvider": "Statistic_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/microservices/statistics"
+            },
+            {
+              "serviceProvider": "Fall_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/microservices/fall"
+            },
+            {
+              "serviceProvider": "Freezing_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/microservices/freezing"
+            },
+            {
+              "serviceProvider": "Tremor_manager",
+              "serviceType": "MQTT",
+              "topic": "ParkinsonHelper/patient6/microservices/tremor"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -93,12 +93,12 @@ class MyBot:
             self.doctor()
         elif (query_data == "patient"):
             self.patient_login()
+        elif (query_data == "ts"):
+            self.thingspeak()
         elif (query_data == "back"):
             self.undo()
+
            
-        
-        #Example of Notification
-        #self.bot.answerCallbackQuery(query_id, text='Got it')
 
     """Send a message when the command /start is issued."""
     def start(self):
@@ -128,6 +128,7 @@ class MyBot:
                    [InlineKeyboardButton(text='MQTT', callback_data='mqtt'),InlineKeyboardButton(text='ThingSpeak', callback_data='ts')],
                    [InlineKeyboardButton(text='Back', callback_data='back')]
                ])
+ 
         """Procedure to delete the last message"""
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
@@ -226,7 +227,34 @@ class MyBot:
         stats_subscriber = MQTTsubscriber(mqtt_id, broker, port, topic, self)
         stats_subscriber.start()
         print("Subscribed to: " + topic)
-    
+
+    def thingspeak(self):
+        """ Candela's tests :)
+        read_api="J0KGI0GD2XWSZLYW"
+        channel_id = "2210016"
+        
+        channel_info=response.json()
+        write_api=channel_info["api_keys"][0]["api_key"]
+        read_api=channel_info["api_keys"][1]["api_key"]
+        print("Write api: ",write_api)
+        print("Read api: ",read_api)
+
+        fieldID=4
+        url=f"https://api.thingspeak.com/channels/{channel_id}/fields/{fieldID}.json?api_key={read_api}"# gett alla values of the field of the last day
+        start_date="2023-07-02"
+        end_date="2023-07-02"
+        url=f"https://api.thingspeak.com/channels/{channel_id}/fields/{fieldID}.json?api_key={read_api}&start={start_date}&end={end_date}"#get data of field of the day
+        url=f"https://api.thingspeak.com/channels/{channel_id}/fields/{fieldID}.json?api_key={read_api}&result=10" #get last 10 values
+        #In the start day and end day, if you specify the hours, you'll get the values of the hours range  
+        response=requests.get(url)
+        data=response.json()
+        feeds = data['feeds']
+        
+        values = [feed[f'field{fieldID}'] for feed in feeds]
+        print(values)
+        filtered_data = [x for x in values if x is not None ] #to create a list of value without values=None
+        """
+        
     def undo(self):
         if (self.position == "help_page"):
             self.start()
@@ -237,6 +265,7 @@ class MyBot:
         elif(self.position == "patient_menu"):
             self.notification.stop()
             self.patient_login()
+
 
 class Notification(threading.Thread):
     def __init__(self, ThreadID, name, telebot_instance):

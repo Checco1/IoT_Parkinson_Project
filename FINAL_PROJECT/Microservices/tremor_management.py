@@ -7,6 +7,10 @@ import time
 import paho.mqtt.client as PahoMQTT
 import json
 import requests
+from pathlib import Path
+
+P = Path(__file__).parent.absolute()
+CONF = P / 'tremor_conf.json'
 
 class tremor_management():
 
@@ -28,15 +32,15 @@ class tremor_management():
         self.bn = "ParkinsonHelper"
 
         self.structure = {"bn": self.bn +"/tremor_manager",
-                "e":
-                    [
-                        {
-                            "measureType":"tremor_manager",
-                            "unit":"bool",
-                            "timeStamp":time.time(),
-                            "value": True,
-                        }
-                    ]
+            "e":
+                [
+                    {
+                        "measureType":"tremor_manager",
+                        "unit":"bool",
+                        "timeStamp":time.time(),
+                        "value": True,
+                    }
+                ]
 
         }
         
@@ -91,34 +95,46 @@ class tremor_management():
 
 if __name__ == "__main__":
 
-    microserviceID = 'tremor147852' 
-    uri_broker = 'http://localhost:8080/broker'
-    uri_sensor = 'http://localhost:8080/info/patient1'
+    # Open microservice's configuration file
+    try:
+        with open(CONF, "r") as fs:
+             conf_file = json.loads(fs.read())
+    except Exception:
+         print("Problem in loading catalog")
 
     # Get info about port and broker
-    settings = requests.get(uri_broker).json()
+    microserviceID = conf_file["microservice_ID"]
+    settings = requests.get(conf_file["broker_uri"]).json()
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
 
-    # get client's sensors 
-    client_info= requests.get(uri_sensor).json()
-    wrist_acc_ID = "wrist_acc1"
-    dbs_ID = "dbs1"
+    # Get client's sensors
+    while (True):
+        client_info= requests.get(conf_file["information_uri"]).json()
+        if (client_info != -1):
+            time.sleep(5)
+            break
+        else:
+            print("No patients registered yet, retrying in 10s...")
+        time.sleep(10)
+    
+    sensorID = conf_file["sensor_ID"]
+    actuatorID = conf_file["actuator_ID"]
 
     for d in range(len(client_info["devices"])):
-                if client_info["devices"][d]["deviceID"] == wrist_acc_ID:
-                    wrist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
-                if client_info["devices"][d]["deviceID"] == dbs_ID:
-                    dbs_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]["activation"]
+        if client_info["devices"][d]["deviceID"] == sensorID:
+            sensor = client_info["devices"][d]["Services"][0]["topic"]
+        if client_info["devices"][d]["deviceID"] == actuatorID:
+            actuator = client_info["devices"][d]["Services"][0]["topic"]["activation"]
 
 
-    wrist_topic_args = wrist_topic_p_1.split('/')
-    wrist_topic =wrist_topic_args[0]+'/+/'+wrist_topic_args[2]+'/#'
+    sensor_args = sensor.split('/')
+    sensor_topic =sensor_args[0]+'/+/'+sensor_args[2]+'/#'
     
-    dbs_topic_args = dbs_topic_p_1.split('/')
-    dbs_topic = dbs_topic_args[0] + "/PATIENT_ID/" + dbs_topic_args[2] + '/' + dbs_topic_args[3]
-    print(dbs_topic)
-    tm = tremor_management(microserviceID, port, broker, wrist_topic, dbs_topic)
+    actuator_args = actuator.split('/')
+    actuator_topic = actuator_args[0] + "/PATIENT_ID/" + actuator_args[2] + '/' + actuator_args[3]
+  
+    tm = tremor_management(microserviceID, port, broker, sensor_topic, actuator_topic)
     tm.start()
     tm.subscriber()
 
