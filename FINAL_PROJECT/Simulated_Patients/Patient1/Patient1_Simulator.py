@@ -92,7 +92,7 @@ if __name__ == "__main__":
     #Retrieve MQTT info (topics and settings) from patient.json
     info=RetrievePatientInfo("http://localhost:8080")
     patientID = info.GetID(name, code)
-    [channel_id, write_api, read_api, url] = register.CreateTSChannel(patientID)
+    [channel_id, write_api, read_api, url] = register.CreateTSChannel(" "+patientID)
     register.CreateStatisticServices(name, code, channel_id, write_api, read_api, url)
     topics=info.GetTopic(patientID)
     settings=info.GetSettings()

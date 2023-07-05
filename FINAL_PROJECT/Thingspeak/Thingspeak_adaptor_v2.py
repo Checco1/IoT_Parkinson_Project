@@ -9,34 +9,23 @@ import time
 import datetime
 import threading
 import requests
-import cherrypy
 import ast
-import statistics
 from pathlib import Path
 
 P = Path(__file__).parent.absolute()
 loop_flag = 1
 time_flag = 1
-write_api=""
 FILE = P / "conf.json"
 
 
 # Functions
 def data_publish(list, url):
     """Take a list of jsons and publish them via REST on ThingSpeak using post method."""
-    url=url + f"?api_key={write_api}"
+    #url=url + f"?api_key={write_api}"
     for item in list:
         print("Publishing:")
         print(json.dumps(item))
-        response=requests.post(url, data=item)
-        """print(item)
-        print(response )
-        print(response.text)
-        print(response.content)"""
-    
-        
-    
-
+        requests.post(url, data=item)
 
 def read_file(filename):
     """Read json file to get catalogURL, port, topic and ThingSpeak URL."""
@@ -47,7 +36,6 @@ def read_file(filename):
         port = data["port"]
         ts_url = data["thingspeakURL"]
         return url, port, topic, ts_url
-
 
 def broker_info(url, port):
     """broker_ip = "test.mosquitto.org"
@@ -109,9 +97,8 @@ class Database(object):
         """Create a new json with writeAPI and timestamp (ISO 8601).
         create a new channel (patient)"""
         data = {
-            "write_api": write_api,
-            "created_at": self.created_at,
-            
+            "api_key": write_api,
+            "created_at": self.created_at,   
         }
         return data
 
@@ -124,9 +111,12 @@ class Database(object):
         cnt = 0
 
         for data in self.list_data:
-            if data["write_api"] == write_api:
+            if data["api_key"] == write_api:
                 self.list_data[cnt].update(up)
-            cnt += 1     
+            cnt += 1
+
+        print(self.list_ID)
+        print(self.list_data)    
 
     def reset(self):
         """Reset lists and time."""
@@ -167,13 +157,15 @@ class MySubscriber(object):
     def my_on_connect(self, client, userdata, flags, rc):
         
         global loop_flag
-        print("S - Connected to %s - Result code: %d" % (self.messageBroker,
-                                                         rc))
+        print("S - Connected to %s - Result code: %d" % (self.messageBroker, rc))
         loop_flag = 0 #become 0 because the system is connected
 
     def send_data(self):
         """Send data and then reset lists."""
         data = self.db.list_data
+        
+        print(data)
+        
         self.db.reset()
         return data
 
@@ -184,83 +176,145 @@ class MySubscriber(object):
 
         # Decode received message and find devID and patient
         message = json.loads(msg.payload.decode("utf-8"))
-        print(message)
+        #print(message)
         devID = message['bn']
         devID = devID.split('/')
         
         patientID=devID[0]
-        id=''.join(filter(str.isdigit, patientID))
+
         # Ask catalog the write_api of the thingspeak channel for that specific patientID.
 
         string = "http://" + self.url + ":" + self.port + "/info/" + patientID
         info = json.loads(requests.get(string).text)
+        if info != -1:
+            for service in info["Services_p"]:
+                if service["ServiceName"] == "ThingSpeak":
+                    channel_id = service["Channel_ID"]
+                    write_api = service["WriteApi"]
+                    read_api = service["ReadApi"]
+                    local_url = service["URL"]
 
-        global write_api
-        write_api = info["Services_p"][1]["WriteApi"] 
-        
         # Update values in the database.
-        self.db.create(patientID, str(write_api))
+        #self.db.create(patientID, str(write_api))
 
         for i in message["e"]:
-            if i["measureType"] == 'alive':
-                pass
-            else:
-                topic = i["measureType"]
-                if topic == "tremor_manager":
-                    value = i["value"]
-                    if value == 1:
-                        self.cont_tremor += 1
-                        values=self.cont_tremor
-                        field = 4
-                        self.db.update_data(str(write_api), field, values)
+                
+            MeasureType = i["measureType"]
+            if MeasureType == "fall_manager":
+                value = i["value"]
+                if value == 1:
+
+                    req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "4" + ".json?results=1&api_key=" + read_api
+                    resp = json.loads(requests.get(req).text)
+
+                    if resp["feeds"] != []:
+                        if resp["feeds"][0]["field4"] != None:
+                            total_fall = int(resp["feeds"][0]["field4"]) 
+                        else:
+                            total_fall = 0
+                    else:
+                        total_fall = 0
+
+                    total_fall += 1
+
+                    now = time.time()
+                    created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
+
+                    msg = {
+                        "api_key": write_api, 
+                        "created_at": created_at, 
+                        "field4": total_fall
+                    }
+
+                    requests.post(self.ts_url, msg)
+                    print("Fall Occurred and sended on ThingSpeak!")
+
+            elif MeasureType == "tremor_manager":
+                value = i["value"]
+                if value == 1:
+
+                    req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "5" + ".json?results=1&api_key=" + read_api
+                    resp = json.loads(requests.get(req).text)
+
+                    if resp["feeds"] != []:
+                        if resp["feeds"][0]["field5"] != None:
+                            total_tremor = int(resp["feeds"][0]["field5"])
+                        else:
+                            total_tremor = 0         
+                    else:
+                        total_tremor = 0
+
+                    total_tremor += 1
+
+                    now = time.time()
+                    created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
+
+                    msg = {
+                        "api_key": write_api, 
+                        "created_at": created_at, 
+                        "field5": total_tremor
+                    }
+
+                    requests.post(self.ts_url, msg)
+                    print("Tremor Occurred and sended on ThingSpeak!")
                         
-                elif topic == "fall_manager":
-                    value = i["value"]
-                    if value == 1:
-                        self.cont_fall += 1
-                        values=self.cont_fall
-                        field = 5
-                        self.db.update_data(str(write_api), field, values)
-                        
-                elif topic == "freezing_manager":
-                    value = i["value"]
-                    if value == 1:
-                        self.cont_freezing += 1
-                        values=self.cont_freezing
-                        field = 6
-                        self.db.update_data(str(write_api), field, values)
-                        
-                elif topic == "WaistAccStats":
-                    value = i["value"]
-                    #field=1
-                    #std =float(i["value"]["std"])
-                    #values=[mean,std]
-                    values=ast.literal_eval(value)
-                    field=1
-                    self.db.update_data(str(write_api), field, values)
+            elif MeasureType == "freezing_manager":
+                value = i["value"]
+                if value == 1:
+
+                    req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "6" + ".json?results=1&api_key=" + read_api
+                    resp = json.loads(requests.get(req).text)
+
+                    if resp["feeds"] != []:
+                        if resp["feeds"][0]["field6"] != None:
+                            total_freezing = int(resp["feeds"][0]["field6"])
+                        else:
+                            total_freezing = 0         
+                    else:
+                        total_freezing = 0
+
+                    total_freezing += 1
+
+                    now = time.time()
+                    created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
+
+                    msg = {
+                        "api_key": write_api, 
+                        "created_at": created_at, 
+                        "field6": total_freezing
+                    }
+
+                    requests.post(self.ts_url, msg)
+                    print("Freezing Occurred and sended on ThingSpeak!")
+                    
+        #    elif MeasureType == "WaistAccStats":
+        #        value = i["value"]
+        #        #field=1
+        #        #std =float(i["value"]["std"])
+        #        #values=[mean,std]
+        #        values=ast.literal_eval(value)
+        #        field=1
+        #        self.db.update_data(str(write_api), field, values)
 
                         
-                elif topic == "WristAccStats":
-                    value = i["value"]
-                    #std =float(i["value"]["std"])
-                    #fieldM=7
-                    #values=[mean,std]
-                    values=ast.literal_eval(value)
-                    field = 2
-                    self.db.update_data(str(write_api), field, values)
-                    
-                elif topic == "PressureStats":
-                    value = i["value"]
-                    values=ast.literal_eval(value)
-                    #print(values)
-                    field=3
-                    self.db.update_data(str(write_api), field, values)
-                    #std =float(i["value"]["std"])
-                    #values=[mean,std]
-                    #fieldS = 9  
-                    
-                    
-                #self.db.update_data(str(write_api), field, values)
+        #    elif MeasureType == "WristAccStats":
+        #        value = i["value"]
+        #        #std =float(i["value"]["std"])
+        #        #fieldM=7
+        #        #values=[mean,std]
+        #        values=ast.literal_eval(value)
+        #        field = 2
+        #        self.db.update_data(str(write_api), field, values)
+                
+        #    elif MeasureType == "PressureStats":
+        #        value = i["value"]
+        #        values=ast.literal_eval(value)
+        #        #print(values)
+        #        field=3
+        #        self.db.update_data(str(write_api), field, values)
+        #        #std =float(i["value"]["std"])
+        #        #values=[mean,std]
+        #        #fieldS = 9                         
 
 # Threads
 class SendData(threading.Thread):
@@ -290,19 +344,20 @@ class SendData(threading.Thread):
             while time_flag == 0: 
                 """# wait untill the time_flag becomes 1, so every 15 sec except the first cycle that we have
                 global time_flag = 1"""
-                time.sleep(.1)
+                time.sleep(0.1)
 
             # waiting for the connection. when the system is connected to the broker, loop_flag becomes false
             while loop_flag:
                 print("Waiting for connection...")
-                time.sleep(.01)
+                time.sleep(0.1)
 
             # Collecting data for 15 seconds. it stops when the time_flag becomes 0 (so after 15 sec)
             while time_flag == 1:
-                time.sleep(.1)
+                time.sleep(0.1)
 
             # Publish json data on thingspeak. Different patient=different channel
-            data_publish(sub.send_data(), self.ts_url)
+            #print(self.ts_url)
+            #data_publish(sub.send_data(), self.ts_url)
         
 
 if __name__ == "__main__":
@@ -311,7 +366,6 @@ if __name__ == "__main__":
     url=f"https://api.thingspeak.com/channels.json"
     data={
         "api_key":api_key,
-        "name":"paziente N",
         "field1":"waistStats",
         "field2":"wristStats",
         "field3":"pressureStats",
@@ -340,9 +394,6 @@ if __name__ == "__main__":
     thread1.start()
     thread2 = Timer(2, "Timer")
     thread2.start()
-    #thread3 = CherryThread(3, "CherryServer")
-    #thread3.start()
-
 
     """ read values of field od the patient
     read_api="E7JRP689C2U0W11U"
