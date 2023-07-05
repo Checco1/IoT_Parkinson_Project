@@ -103,7 +103,9 @@ if __name__ == "__main__":
     data=SensorSimulator(patientID,broker,port,topics)
     data.ReadTXT()
     data.client.start()
-    data.SendData()
+
+    while True:
+        data.SendData()
 
     #End of the service
     data.client.stop()
