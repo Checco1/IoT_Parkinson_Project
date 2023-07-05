@@ -18,7 +18,6 @@ P = Path(__file__).parent.absolute()
 loop_flag = 1
 time_flag = 1
 write_api=""
-#CHERRY_CONF = str(P / "cherrypyconf")
 FILE = P / "conf.json"
 
 
@@ -51,8 +50,12 @@ def read_file(filename):
 
 
 def broker_info(url, port):
-    broker_ip = "test.mosquitto.org"
-    mqtt_port = 1883
+    """broker_ip = "test.mosquitto.org"
+    mqtt_port = 1883"""
+    string = "http://"+url+":"+port+"/broker"
+    broker=requests.get(string)
+    broker_ip=json.loads(broker.text)["IP"]
+    mqtt_port=json.loads(broker.text)["mqtt_port"]
     return broker_ip, mqtt_port
 
 # Classes
@@ -153,7 +156,7 @@ class MySubscriber(object):
         """Start subscriber."""
         self._paho_mqtt.connect(self.messageBroker, 1883)
         self._paho_mqtt.loop_start()
-        self._paho_mqtt.subscribe(self.topic, 0)
+        self._paho_mqtt.subscribe(self.topic, 2)
 
     def stop(self):
         """Stop subscriber."""
@@ -186,19 +189,14 @@ class MySubscriber(object):
         devID = devID.split('/')
         
         patientID=devID[0]
-        # Ask catalog the thingspeakID for that specific patientID.
+        id=''.join(filter(str.isdigit, patientID))
+        # Ask catalog the write_api of the thingspeak channel for that specific patientID.
 
-        #string = "http://" + self.url + ":" + self.port + "/info/" + patientID
-        #info = json.loads(requests.get(string).text)
-        #thingspeakID = info['thingspeakID']
+        string = "http://" + self.url + ":" + self.port + "/info/" + patientID
+        info = json.loads(requests.get(string).text)
 
-        # Ask catalog the APIs for that ThingSpeak ID.
-
-        #string = ("http://" + self.url + ":" + self.port +  str(thingspeakID))
-        #info = json.loads(requests.get(string).text)
-        #write_api = info["writeAPI"]
         global write_api
-        write_api = "JBYHOQB4NQ30ABSO"
+        write_api = info["Services_p"][1]["WriteApi"] 
         
         # Update values in the database.
         self.db.create(patientID, str(write_api))

@@ -153,7 +153,7 @@ class Catalog(object):
         self.load_file()
         for p in self.patient["patients_list"]:
             if p["patientID"] == ID:
-                info = {"patientID": ID, "name": p["patientName"],"devices": p["device_list"]}
+                info = {"patientID": ID, "name": p["patientName"],"devices": p["device_list"], "Services_p": p["Statistic_services"]}
                 return info
 
             for d in p["device_list"]:

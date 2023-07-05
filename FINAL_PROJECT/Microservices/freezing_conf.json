@@ -1,0 +1,7 @@
+{
+    "microservice_ID" : "freezing147852",
+    "broker_uri" : "http://localhost:8080/broker",
+    "information_uri" : "http://localhost:8080/info/patient1",
+    "sensor_ID": "waist_acc1",
+    "actuator_ID" : "sf1"
+}

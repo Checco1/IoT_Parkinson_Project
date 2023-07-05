@@ -9,7 +9,10 @@ import time
 import paho.mqtt.client as PahoMQTT
 import json
 import requests
+from pathlib import Path
 
+P = Path(__file__).parent.absolute()
+CONF = P / 'freezing_conf.json'
 
 # MQTT connection class
 class freezing_management():
@@ -28,15 +31,15 @@ class freezing_management():
 
         self.bn = "ParkinsonHelper"
         self.structure = {"bn": self.bn +"/freezing_manager",
-                "e":
-                    [
-                        {
-                            "measureType": "freezing_manager",
-                            "unit":"bool",
-                            "timeStamp":time.time(),
-                            "value": True,
-                        }
-                    ]
+            "e":
+                [
+                    {
+                        "measureType": "freezing_manager",
+                        "unit":"bool",
+                        "timeStamp":time.time(),
+                        "value": True,
+                    }
+                ]
 
         }
         self.listOfPatients = [{"waistFlag" : 0, "pressureFlag": 0}]*512
@@ -118,36 +121,44 @@ class freezing_management():
 
 if __name__ == "__main__":
 
-    microserviceID = 'freezing147852' 
-    uri_broker = 'http://localhost:8080/broker'
-    uri_sensor = 'http://localhost:8080/info/patient1' 
-
-    waist_topic = []
-    actuators_topics = []
+    # Open microservice's configuration file
+    try:
+        with open(CONF, "r") as fs:
+             conf_file = json.loads(fs.read())
+    except Exception:
+         print("Problem in loading catalog")
 
     # Get info about port and broker
-    settings = requests.get(uri_broker).json()
+    microserviceID = conf_file["microservice_ID"]
+    settings = requests.get(conf_file["broker_uri"]).json()
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
+
+    # Get client's sensors
+    while (True):
+        client_info= requests.get(conf_file["information_uri"]).json()
+        if (client_info != -1):
+            time.sleep(5)
+            break
+        else:
+            print("No patients registered yet, retrying in 10s...")
+        time.sleep(10)
     
-    # get client's sensors (for now I can retrieve this this way, but maybe it is better to have the waist topic already defined.)
-    
-    client_info= requests.get(uri_sensor).json()
-    waist_acc_ID = "waist_acc1"
-    soundfeedback_ID = "sf1"
+    sensorID = conf_file["sensor_ID"]
+    actuatorID = conf_file["actuator_ID"]
     
     for d in range(len(client_info["devices"])):
-                if client_info["devices"][d]["deviceID"] == waist_acc_ID:
-                    waist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
-                if client_info["devices"][d]["deviceID"] == soundfeedback_ID:
-                    soundfeedback_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]["activation"]
+                if client_info["devices"][d]["deviceID"] == sensorID:
+                    sensor = client_info["devices"][d]["Services"][0]["topic"]
+                if client_info["devices"][d]["deviceID"] == actuatorID:
+                    actuator = client_info["devices"][d]["Services"][0]["topic"]["activation"]
 
-    waist_topic_args = waist_topic_p_1.split('/')
-    waist_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/#'
+    sensor_args = sensor.split('/')
+    sensor_topic =sensor_args[0]+'/+/'+sensor_args[2]+'/#'
 
-    sf_topic_args = soundfeedback_topic_p_1.split('/')
-    sf_topic = sf_topic_args[0] +"/PATIENT_ID/" + sf_topic_args[2] + "/" + sf_topic_args[3]
-    tm = freezing_management(microserviceID, port, broker, waist_topic, sf_topic)
+    actuator_args = actuator.split('/')
+    actuator_topic = actuator_args[0] +"/PATIENT_ID/" + actuator_args[2] + "/" + actuator_args[3]
+    tm = freezing_management(microserviceID, port, broker, sensor_topic, actuator_topic)
     tm.start()
     tm.subscriber()
 

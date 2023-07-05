@@ -9,7 +9,10 @@ import json
 import numpy as np
 from numpy_ringbuffer import RingBuffer
 import requests
+from pathlib import Path
 
+P = Path(__file__).parent.absolute()
+CONF = P / 'statistics_conf.json'
 
 class statistics_management():
     
@@ -125,36 +128,44 @@ class statistics_management():
     
 
 if __name__ == "__main__":
-    microserviceID = 'stats147852' 
-    uri_broker = 'http://localhost:8080/broker'
-    uri_sensor = 'http://localhost:8080/info/patient1'
-    uri_actuators = 'http://localhost:8080/ts'
+     # Open microservice's configuration file
+    try:
+        with open(CONF, "r") as fs:
+             conf_file = json.loads(fs.read())
+    except Exception:
+         print("Problem in loading catalog")
 
-     # Get info about port and broker
-    settings = requests.get(uri_broker).json()
+    # Get info about port and broker
+    microserviceID = conf_file["microservice_ID"]
+    settings = requests.get(conf_file["broker_uri"]).json()
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
 
-    # get client's sensors 
-    client_info= requests.get(uri_sensor).json()
-    waist_acc_ID = "waist_acc1"
-
-    for d in range(len(client_info["devices"])):
-                if client_info["devices"][d]["deviceID"] == waist_acc_ID:
-                    waist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
-               
-    topic_args = waist_topic_p_1.split('/')
-    sensors =topic_args[0]+'/+/'+topic_args[2]+'/'+ '#'
-
-    # get client's actuators
+    # Get client's sensors
+    while (True):
+        client_info= requests.get(conf_file["information_uri"]).json()
+        if (client_info != -1):
+            time.sleep(5)
+            break
+        else:
+            print("No patients registered yet, retrying in 10s...")
+        time.sleep(10)
     
-    actuators_topics = "ParkinsonHelper/PATIENT_ID/microservices/statistics"
+    sensorID = conf_file["sensor_ID"]
+    
+    for d in range(len(client_info["devices"])):
+                if client_info["devices"][d]["deviceID"] == sensorID:
+                    sensor = client_info["devices"][d]["Services"][0]["topic"]
 
-    tm = statistics_management(microserviceID, port, broker, sensors, actuators_topics)
+    sensor_args = sensor.split('/')
+    sensor_topic =sensor_args[0]+'/+/'+sensor_args[2]+'/#'
+
+    actuators_topics = conf_file["microservice_topic"]
+
+    tm = statistics_management(microserviceID, port, broker, sensor_topic, actuators_topics)
     tm.start()
     tm.subscriber()
 
-    # Creation of the MQTT message to send to the actuators
     while True:
         pass
    

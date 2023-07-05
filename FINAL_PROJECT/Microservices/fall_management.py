@@ -9,6 +9,10 @@ import time
 import paho.mqtt.client as PahoMQTT
 import json
 import requests
+from pathlib import Path
+
+P = Path(__file__).parent.absolute()
+CONF = P / 'fall_conf.json'
 
 class fall_management():
     
@@ -123,34 +127,39 @@ class fall_management():
         self._paho_mqtt.disconnect()
 
 if __name__ == "__main__":
-
-    microserviceID = 'fall147852' 
-    uri_broker = 'http://localhost:8080/broker'
-    uri_sensor = 'http://localhost:8080/info/patient1' 
-
-    waist_topic = []
-    pressure_topic = []
-    actuators_topic = []
+    
+    # Open microservice's configuration file
+    try:
+        with open(CONF, "r") as fs:
+             conf_file = json.loads(fs.read())
+    except Exception:
+         print("Problem in loading catalog")
 
     # Get info about port and broker
-    settings = requests.get(uri_broker).json()
+    microserviceID = conf_file["microservice_ID"]
+    settings = requests.get(conf_file["broker_uri"]).json()
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
 
-    # get client's sensors 
-    client_info= requests.get(uri_sensor).json()
-    waist_acc_ID = "waist_acc1"
-    pressure_ID = "pressure1"
-    for d in range(len(client_info["devices"])):
-                if client_info["devices"][d]["deviceID"] == waist_acc_ID:
-                    waist_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
-                if client_info["devices"][d]["deviceID"] == pressure_ID:
-                    pressure_topic_p_1 = client_info["devices"][d]["Services"][0]["topic"]
-
-    waist_topic_args = waist_topic_p_1.split('/')
-    sensor_topic =waist_topic_args[0]+'/+/'+waist_topic_args[2]+'/#'
+    # Get client's sensors
+    while (True):
+        client_info= requests.get(conf_file["information_uri"]).json()
+        if (client_info != -1):
+            time.sleep(5)
+            break
+        else:
+            print("No patients registered yet, retrying in 10s...")
+        time.sleep(10)
     
-    actuators_topics = "ParkinsonHelper/PATIENT_ID/microservices/fall"
+    sensorID = conf_file["sensor_ID"]
+    for d in range(len(client_info["devices"])):
+                if client_info["devices"][d]["deviceID"] == sensorID:
+                    sensor = client_info["devices"][d]["Services"][0]["topic"]
+
+    sensor_args = sensor.split('/')
+    sensor_topic =sensor_args[0]+'/+/'+sensor_args[2]+'/#'
+    
+    actuators_topics = conf_file["microservice_topic"]
     
     tm = fall_management(microserviceID, port, broker, sensor_topic, actuators_topics)
     tm.start()
