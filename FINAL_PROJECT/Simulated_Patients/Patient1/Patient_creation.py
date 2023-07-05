@@ -194,7 +194,9 @@ class CreatePatient():
             print("New channel added with id: ",channel_id)
         else:
             print("Error in the channel creation")
-        url=f"https://api.thingspeak.com/channels/{channel_id}/bulk_update.json"
+        #url=f"https://api.thingspeak.com/channels/{channel_id}/bulk_update.json"
+        url=f"https://api.thingspeak.com/channels/{channel_id}.json"
+
         params={"api_key":api_key}
         response=requests.get(url,params=params)
         

@@ -4,6 +4,7 @@
 # 4th. Sends the statistics to the thingspeak adaptor
 
 import time
+import datetime
 import paho.mqtt.client as PahoMQTT
 import json
 import numpy as np
@@ -34,14 +35,28 @@ class statistics_management():
                     [
                         {
                             "measureType":"statistics_manager",
-                            "unit":"[mean, std]",
+                            "unit":"[]",
                             "timeStamp":"",
                             "value":"",
+                            "valueTimestamps" : ""
                         }
                     ]
         }
 
-        self.listOfPatients = [{"waistBuffer" : [15], "wristBuffer": [15], "pressureBuffer": [15]}]*512
+        self.listOfPatientsTimeStamps = [
+                                            {       
+                                                "waistTimeStamp" : [15], 
+                                                "wristTimeStamp": [15], 
+                                                "pressureTimeStamp": [15]
+                                            }
+                                        ]*512
+        self.listOfPatients = [
+                                    {
+                                        "waistBuffer" : [15], 
+                                        "wristBuffer": [15], 
+                                        "pressureBuffer": [15]
+                                    }
+                                ]*512
         self.sensor_id = "default"
         self.receivedPatientID = "default"
         self.receivedActuator = "default"
@@ -69,40 +84,63 @@ class statistics_management():
         pressureSensorName = "pressure" + str(patientNumber)
 
         self.structure["bn"] = self.receivedPatientID + '/statistics_manager'
+        now = time.time()
         if(self.receivedActuator == waistSensorName):
             waist_freq = sensor_info["e"][0]["value"]
+            waist_timestamp = str(datetime.datetime.utcfromtimestamp(now).isoformat())
+
             self.listOfPatients[patientNumber]["waistBuffer"].append(waist_freq)
+            self.listOfPatientsTimeStamps[patientNumber]["waistTimeStamp"].append(waist_timestamp)
+
             if (len(self.listOfPatients[patientNumber]["waistBuffer"]) == 15):
                 self.structure["bn"] = self.sensor_id      
                 self.structure["e"][0]["measureType"] = "WaistAccStats"
                 self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
                 self.structure["e"][0]["value"] = str(self.listOfPatients[patientNumber]["waistBuffer"])
+                self.structure["e"][0]["valueTimestamps"] = str(self.listOfPatientsTimeStamps[patientNumber]["waistTimeStamp"])
                 # Remove the content of the buffer
                 self.listOfPatients[patientNumber]["waistBuffer"].clear()
+                self.listOfPatientsTimeStamps[patientNumber]["waistTimeStamp"].clear()
                 self.publisher(json.dumps(self.structure))
 
         elif(self.receivedActuator == wristSensorName):
             wrist_freq = sensor_info["e"][0]["value"]
+            wrist_timestamp = str(datetime.datetime.utcfromtimestamp(now).isoformat())
+
             self.listOfPatients[patientNumber]["wristBuffer"].append(wrist_freq)
+            self.listOfPatientsTimeStamps[patientNumber]["wristTimeStamp"].append(wrist_timestamp)
+
             if (len(self.listOfPatients[patientNumber]["wristBuffer"]) == 15): 
                 self.structure["bn"] = self.sensor_id      
                 self.structure["e"][0]["measureType"] = "WristAccStats"
                 self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
                 self.structure["e"][0]["value"] = str(self.listOfPatients[patientNumber]["wristBuffer"])
+                self.structure["e"][0]["valueTimestamps"] = str(self.listOfPatientsTimeStamps[patientNumber]["wristTimeStamp"])
+
                 # Remove the content of the buffer
                 self.listOfPatients[patientNumber]["wristBuffer"].clear()
+                self.listOfPatientsTimeStamps[patientNumber]["wristTimeStamp"].clear()
+
                 self.publisher(json.dumps(self.structure))
 
         elif(self.receivedActuator == pressureSensorName):
             pressure = sensor_info["e"][0]["value"]
+            pressure_timestamp = str(datetime.datetime.utcfromtimestamp(now).isoformat())
+           
             self.listOfPatients[patientNumber]["pressureBuffer"].append(pressure)
+            self.listOfPatientsTimeStamps[patientNumber]["pressureTimeStamp"].append(pressure_timestamp)
+
             if (len(self.listOfPatients[patientNumber]["pressureBuffer"]) == 15):  
                 self.structure["bn"] = self.sensor_id    
                 self.structure["e"][0]["measureType"] = "PressureStats"
                 self.structure["e"][0]["timeStamp"] = sensor_info["e"][0]["timeStamp"]
                 self.structure["e"][0]["value"] = str(self.listOfPatients[patientNumber]["pressureBuffer"])
+                self.structure["e"][0]["valueTimestamps"] = str(self.listOfPatientsTimeStamps[patientNumber]["pressureTimeStamp"])
+
+                
                 # Remove the content of the buffer
                 self.listOfPatients[patientNumber]["pressureBuffer"].clear()
+                self.listOfPatientsTimeStamps[patientNumber]["pressureTimeStamp"].clear()
                 self.publisher(json.dumps(self.structure))
         
         return self.structure
@@ -118,7 +156,7 @@ class statistics_management():
     def publisher(self, msg):
         topic = self.actuators_topic.replace( "PATIENT_ID", self.receivedPatientID)
         self._paho_mqtt.publish(topic, msg, 2)
-        print("published: " + str(msg) + " on " + topic)
+        print("published: " + str(msg) + " on " + topic + "\n")
 
     def stop(self):
         self._paho_mqtt.unsubscribe(self.topic)
