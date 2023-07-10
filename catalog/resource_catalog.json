@@ -2,56 +2,36 @@
   "patients_list": [
     {
       "patientID": "patient1",
-      "device_list": []
-    },
-    {
-      "patientID": "patient2",
-      "device_list": []
-    },
-    {
-      "patientID": "patient3",
-      "device_list": []
-    },
-    {
-      "patientID": "patient4",
-      "device_list": []
-    },
-    {
-      "patientID": "patient5",
-      "device_list": []
-    },
-    {
-      "patientID": "patient6",
       "device_list": [
         {
-          "deviceID": "waist_acc6",
+          "deviceID": "waist_acc1",
           "Services": [
             {
               "serviceType": "MQTT",
-              "topic": "ParkinsonHelper/patient6/sensors/waist_acc6"
+              "topic": "ParkinsonHelper/patient1/sensors/waist_acc1"
             }
           ],
-          "lastUpdate": 1688575483.0000496
+          "lastUpdate": 1689026039.1115022
         },
         {
-          "deviceID": "wrist_acc6",
+          "deviceID": "wrist_acc1",
           "Services": [
             {
               "serviceType": "MQTT",
-              "topic": "ParkinsonHelper/patient6/sensors/wrist_acc6"
+              "topic": "ParkinsonHelper/patient1/sensors/wrist_acc1"
             }
           ],
-          "lastUpdate": 1688575483.034058
+          "lastUpdate": 1689026039.1385083
         },
         {
-          "deviceID": "pressure6",
+          "deviceID": "pressure1",
           "Services": [
             {
               "serviceType": "MQTT",
-              "topic": "ParkinsonHelper/patient6/sensors/pressure6"
+              "topic": "ParkinsonHelper/patient1/sensors/pressure1"
             }
           ],
-          "lastUpdate": 1688575483.0460663
+          "lastUpdate": 1689026039.1495101
         }
       ]
     }

@@ -75,7 +75,7 @@ class Database(object):
     def __init__(self):
         """Initialise database with an empty list."""
         self.list_ID = []
-        self.list_data = []
+        self.list_bulk = []
 
         # Current time in ISO format
         now = time.time()
@@ -85,38 +85,58 @@ class Database(object):
         """Create a new patient given the patientID and api_key.
         Check if there is a patient with the same id, if not create a new one.
         """
-        if patientID in self.list_ID:
-            pass  # The patient is already in the database.
+        for patient in self.list_ID:
+            if patient["patientID"] == patientID:
+                return # The patient is already in the database 
 
-        else:
-            
-            self.list_data.append(self.create_new(write_api))
-            self.list_ID.append(patientID)
+        self.list_bulk.append(self.create_new(write_api))
+        self.list_ID.append({"patientID":patientID, "Write_Api" : write_api, "Waist_key" : False, "Wirst_key" : False, "Pressure_key" : False})
 
     def create_new(self, write_api):
         """Create a new json with writeAPI and timestamp (ISO 8601).
         create a new channel (patient)"""
-        data = {
-            "api_key": write_api,
-            "created_at": self.created_at,   
+        bulk_msg = {
+            "write_api_key" : str(write_api),
+            "updates": []
         }
-        return data
+        return bulk_msg
 
-    def update_data(self, write_api, fieldID, value):
+    def update_data(self, write_api, fieldID, msg):
         """Append or update field and value to the current json."""
-        print("Collected: field%s=%s (%s)" % (str(fieldID), value, write_api))
-        up = {
-                "field" + str(fieldID): value,
-             }
+        
         cnt = 0
 
-        for data in self.list_data:
-            if data["api_key"] == write_api:
-                self.list_data[cnt].update(up)
-            cnt += 1
+        for bulk in self.list_bulk:
+            if bulk["write_api_key"] == write_api:
+                break
+        
+        for data in json.loads(msg["value"]):
+            if bulk != []:  
+                if len(bulk["updates"]) == 15:
+                    bulk["updates"][cnt].update({fieldID:data})
+                    cnt += 1
+                    
+                else:
+                    timestamp = json.loads(msg["valueTimestamps"])[cnt]
+                    t = datetime.datetime.utcfromtimestamp(timestamp).isoformat()
+                    bulk["updates"].append({"created_at" : t, "field1" : "", "field2" : "", "field3" : ""})
+                    bulk["updates"][cnt][fieldID] = data
+                    cnt += 1
 
-        print(self.list_ID)
-        print(self.list_data)    
+            else:
+                timestamp = json.loads(msg["valueTimestamps"])[cnt]
+                t = datetime.datetime.utcfromtimestamp(timestamp).isoformat()
+                bulk["updates"].append({"created_at" : t, "field1" : "", "field2" : "", "field3" : ""})
+                bulk["updates"][cnt][fieldID] = data
+                cnt += 1
+
+    def update_key(self, PatientID, fieldID):
+
+        for patient in self.list_ID:
+            if patient["patientID"] == PatientID:
+                break
+        
+        patient[fieldID] = True
 
     def reset(self):
         """Reset lists and time."""
@@ -137,9 +157,9 @@ class MySubscriber(object):
         self._paho_mqtt = PahoMQTT.Client(clientID, False)
         self._paho_mqtt.on_connect = self.my_on_connect
         self._paho_mqtt.on_message = self.my_on_message_received
-        self.cont_tremor=0
-        self.cont_fall=0
-        self.cont_freezing=0
+        self.key_waist=0
+        self.key_wirst=0
+        self.key_pressure=0
         self.db = Database()
 
     def start(self):
@@ -173,7 +193,6 @@ class MySubscriber(object):
         """Define custom on_message function."""
         # Read conf.json file
         (self.url, self.port, self.topic, self.ts_url) = read_file(FILE)
-
         # Decode received message and find devID and patient
         message = json.loads(msg.payload.decode("utf-8"))
         #print(message)
@@ -182,8 +201,9 @@ class MySubscriber(object):
         
         patientID=devID[0]
 
-        # Ask catalog the write_api of the thingspeak channel for that specific patientID.
-
+            # Update values in the database.
+            #self.db.create(patientID, str(write_api))
+                # Ask catalog the write_api of the thingspeak channel for that specific patientID.
         string = "http://" + self.url + ":" + self.port + "/info/" + patientID
         info = json.loads(requests.get(string).text)
         if info != -1:
@@ -193,128 +213,132 @@ class MySubscriber(object):
                     write_api = service["WriteApi"]
                     read_api = service["ReadApi"]
                     local_url = service["URL"]
+                    break
 
-        # Update values in the database.
-        #self.db.create(patientID, str(write_api))
+        i = message["e"][0]
+        
+        MeasureType = i["measureType"]
+        if MeasureType == "fall_manager":
+            value = i["value"]
+            if value == 1:
 
-        for i in message["e"]:
-                
-            MeasureType = i["measureType"]
-            if MeasureType == "fall_manager":
-                value = i["value"]
-                if value == 1:
+                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "4" + ".json?api_key=" + read_api
+                resp = json.loads(requests.get(req).text)
+                total_fall = 0
 
-                    req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "4" + ".json?results=1&api_key=" + read_api
-                    resp = json.loads(requests.get(req).text)
+                if resp["feeds"] != []:
+                    for entry in resp["feeds"]:
+                        if entry["field4"] != None:
+                            if int(entry["field4"]) > total_fall:
+                                total_fall = int(entry["field4"])  
 
-                    if resp["feeds"] != []:
-                        if resp["feeds"][0]["field4"] != None:
-                            total_fall = int(resp["feeds"][0]["field4"]) 
-                        else:
-                            total_fall = 0
-                    else:
-                        total_fall = 0
+                total_fall += 1
 
-                    total_fall += 1
+                now = time.time()
+                created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
 
-                    now = time.time()
-                    created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
+                msg = {
+                    "api_key": write_api, 
+                    "created_at": created_at, 
+                    "field4": total_fall
+                }
 
-                    msg = {
-                        "api_key": write_api, 
-                        "created_at": created_at, 
-                        "field4": total_fall
-                    }
+                requests.post(self.ts_url, msg)
+                print(f"Fall Occurred and sended on ThingSpeak!, {write_api}")
 
-                    requests.post(self.ts_url, msg)
-                    print("Fall Occurred and sended on ThingSpeak!")
+        elif MeasureType == "tremor_manager":
+            value = i["value"]
+            if value == 1:
 
-            elif MeasureType == "tremor_manager":
-                value = i["value"]
-                if value == 1:
+                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "5" + ".json?api_key=" + read_api
+                resp = json.loads(requests.get(req).text)
+                total_tremor = 0
 
-                    req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "5" + ".json?results=1&api_key=" + read_api
-                    resp = json.loads(requests.get(req).text)
+                if resp["feeds"] != []:
+                    for entry in resp["feeds"]:
+                        if entry["field5"] != None:
+                            if int(entry["field5"]) > total_tremor:
+                                total_tremor = int(entry["field5"])  
 
-                    if resp["feeds"] != []:
-                        if resp["feeds"][0]["field5"] != None:
-                            total_tremor = int(resp["feeds"][0]["field5"])
-                        else:
-                            total_tremor = 0         
-                    else:
-                        total_tremor = 0
+                total_tremor += 1
 
-                    total_tremor += 1
+                now = time.time()
+                created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
 
-                    now = time.time()
-                    created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
+                msg = {
+                    "api_key": write_api, 
+                    "created_at": created_at, 
+                    "field5": total_tremor
+                }
 
-                    msg = {
-                        "api_key": write_api, 
-                        "created_at": created_at, 
-                        "field5": total_tremor
-                    }
+                requests.post(self.ts_url, msg)
+                print(f"Tremor Occurred and sended on ThingSpeak! {write_api}")
 
-                    requests.post(self.ts_url, msg)
-                    print("Tremor Occurred and sended on ThingSpeak!")
-                        
-            elif MeasureType == "freezing_manager":
-                value = i["value"]
-                if value == 1:
+        elif MeasureType == "freezing_manager":
+            value = i["value"]
+            if value == 1:
 
-                    req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "6" + ".json?results=1&api_key=" + read_api
-                    resp = json.loads(requests.get(req).text)
+                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "6" + ".json?api_key=" + read_api
+                resp = json.loads(requests.get(req).text)
+                total_freezing = 0
 
-                    if resp["feeds"] != []:
-                        if resp["feeds"][0]["field6"] != None:
-                            total_freezing = int(resp["feeds"][0]["field6"])
-                        else:
-                            total_freezing = 0         
-                    else:
-                        total_freezing = 0
+                if resp["feeds"] != []:
+                    for entry in resp["feeds"]:
+                        if entry["field6"] != None:
+                            if int(entry["field6"]) > total_freezing:
+                                total_freezing = int(entry["field6"])  
 
-                    total_freezing += 1
+                total_freezing += 1
 
-                    now = time.time()
-                    created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
+                now = time.time()
+                created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
 
-                    msg = {
-                        "api_key": write_api, 
-                        "created_at": created_at, 
-                        "field6": total_freezing
-                    }
+                msg = {
+                    "api_key": write_api, 
+                    "created_at": created_at, 
+                    "field6": total_freezing
+                }
 
-                    requests.post(self.ts_url, msg)
-                    print("Freezing Occurred and sended on ThingSpeak!")
+                requests.post(self.ts_url, msg)
+                print(f"Freezing Occurred and sended on ThingSpeak! {write_api}")
                     
-        #    elif MeasureType == "WaistAccStats":
-        #        value = i["value"]
-        #        #field=1
-        #        #std =float(i["value"]["std"])
-        #        #values=[mean,std]
-        #        values=ast.literal_eval(value)
-        #        field=1
-        #        self.db.update_data(str(write_api), field, values)
-
+        elif MeasureType == "WaistAccStats":
+            field = "field1"
+            self.db.create(patientID, write_api)
+            self.db.update_data(str(write_api), field, i)
+            self.db.update_key(patientID,"Waist_key")
                         
-        #    elif MeasureType == "WristAccStats":
-        #        value = i["value"]
-        #        #std =float(i["value"]["std"])
-        #        #fieldM=7
-        #        #values=[mean,std]
-        #        values=ast.literal_eval(value)
-        #        field = 2
-        #        self.db.update_data(str(write_api), field, values)
+        elif MeasureType == "WristAccStats":
+            field = "field2"
+            self.db.create(patientID, write_api)
+            self.db.update_data(str(write_api), field, i)
+            self.db.update_key(patientID,"Wirst_key")
                 
-        #    elif MeasureType == "PressureStats":
-        #        value = i["value"]
-        #        values=ast.literal_eval(value)
-        #        #print(values)
-        #        field=3
-        #        self.db.update_data(str(write_api), field, values)
-        #        #std =float(i["value"]["std"])
-        #        #values=[mean,std]
-        #        #fieldS = 9                         
+        elif MeasureType == "PressureStats":
+            field = "field3"
+            self.db.create(patientID, write_api)
+            self.db.update_data(str(write_api), field, i)
+            self.db.update_key(patientID,"Pressure_key")
+
+        for person in self.db.list_ID:
+            if person["Waist_key"] == True & person["Wirst_key"] == True & person["Pressure_key"] == True:
+                person["Waist_key"] = False
+                person["Wirst_key"] = False
+                person["Pressure_key"] = False
+                for data in self.db.list_bulk:
+                    if person["Write_Api"] == data["write_api_key"]:
+                        string = "http://" + self.url + ":" + self.port + "/info/" + patientID
+                        info = json.loads(requests.get(string).text)
+                        for service in info["Services_p"]:
+                            if service["ServiceName"] == "ThingSpeak":
+                                channel_id = service["Channel_ID"]
+                        ts = f"https://api.thingspeak.com/channels/{channel_id}/bulk_update.json"
+                        da = json.dumps(data)
+                        #print(ts)
+                        #print(da)
+                        headers = {'Content-Type': 'application/json'}
+                        res = requests.post(ts,da,headers=headers)
+                        data["updates"].clear()    
 
 # Threads
 class SendData(threading.Thread):
@@ -336,24 +360,25 @@ class SendData(threading.Thread):
         global time_flag
 
         # Start subscriber.
-        sub = MySubscriber("Thingspeak", self.topic, self.broker_ip)
+        sub = MySubscriber("J", self.topic, self.broker_ip)
         sub.start()
 
         while True:
+            time.sleep(1)
 
-            while time_flag == 0: 
-                """# wait untill the time_flag becomes 1, so every 15 sec except the first cycle that we have
+            #while time_flag == 0: 
+            """# wait untill the time_flag becomes 1, so every 15 sec except the first cycle that we have
                 global time_flag = 1"""
-                time.sleep(0.1)
+            #    time.sleep(0.1)
 
             # waiting for the connection. when the system is connected to the broker, loop_flag becomes false
-            while loop_flag:
-                print("Waiting for connection...")
-                time.sleep(0.1)
+            #while loop_flag:
+                #print("Waiting for connection...")
+                #time.sleep(0.1)
 
             # Collecting data for 15 seconds. it stops when the time_flag becomes 0 (so after 15 sec)
-            while time_flag == 1:
-                time.sleep(0.1)
+           # while time_flag == 1:
+            #    time.sleep(0.1)
 
             # Publish json data on thingspeak. Different patient=different channel
             #print(self.ts_url)
@@ -392,8 +417,8 @@ if __name__ == "__main__":
 
     thread1 = SendData(1, "SendData")
     thread1.start()
-    thread2 = Timer(2, "Timer")
-    thread2.start()
+    #thread2 = Timer(2, "Timer")
+    #thread2.start()
 
     """ read values of field od the patient
     read_api="E7JRP689C2U0W11U"

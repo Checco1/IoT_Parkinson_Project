@@ -87,7 +87,7 @@ class statistics_management():
         now = time.time()
         if(self.receivedActuator == waistSensorName):
             waist_freq = sensor_info["e"][0]["value"]
-            waist_timestamp = str(datetime.datetime.utcfromtimestamp(now).isoformat())
+            waist_timestamp = now
 
             self.listOfPatients[patientNumber]["waistBuffer"].append(waist_freq)
             self.listOfPatientsTimeStamps[patientNumber]["waistTimeStamp"].append(waist_timestamp)
@@ -105,7 +105,7 @@ class statistics_management():
 
         elif(self.receivedActuator == wristSensorName):
             wrist_freq = sensor_info["e"][0]["value"]
-            wrist_timestamp = str(datetime.datetime.utcfromtimestamp(now).isoformat())
+            wrist_timestamp = now
 
             self.listOfPatients[patientNumber]["wristBuffer"].append(wrist_freq)
             self.listOfPatientsTimeStamps[patientNumber]["wristTimeStamp"].append(wrist_timestamp)
@@ -125,7 +125,7 @@ class statistics_management():
 
         elif(self.receivedActuator == pressureSensorName):
             pressure = sensor_info["e"][0]["value"]
-            pressure_timestamp = str(datetime.datetime.utcfromtimestamp(now).isoformat())
+            pressure_timestamp = now
            
             self.listOfPatients[patientNumber]["pressureBuffer"].append(pressure)
             self.listOfPatientsTimeStamps[patientNumber]["pressureTimeStamp"].append(pressure_timestamp)
