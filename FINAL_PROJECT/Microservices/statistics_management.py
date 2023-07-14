@@ -45,16 +45,16 @@ class statistics_management():
 
         self.listOfPatientsTimeStamps = [
                                             {       
-                                                "waistTimeStamp" : [15], 
-                                                "wristTimeStamp": [15], 
-                                                "pressureTimeStamp": [15]
+                                                "waistTimeStamp" : [], 
+                                                "wristTimeStamp": [], 
+                                                "pressureTimeStamp": []
                                             }
                                         ]*512
         self.listOfPatients = [
                                     {
-                                        "waistBuffer" : [15], 
-                                        "wristBuffer": [15], 
-                                        "pressureBuffer": [15]
+                                        "waistBuffer" : [], 
+                                        "wristBuffer": [], 
+                                        "pressureBuffer": []
                                     }
                                 ]*512
         self.sensor_id = "default"
