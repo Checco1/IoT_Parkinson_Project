@@ -87,6 +87,7 @@ class MyBot:
 
 
     def on_callback_query(self, msg):
+        #content_type, chat_type ,self.chat_ID = telepot.glance(msg)
         query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
         print('Callback Query:', query_id, from_id, query_data)
         if (query_data == "doctor"):
@@ -195,6 +196,12 @@ class MyBot:
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
         self.lastmsg =  self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
+
+    def actual_measure(self):
+        pass
+
+    def daily_episode(self):
+        pass
 
     """Send a message when the command /help is issued."""
     def help(self):
