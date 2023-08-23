@@ -64,6 +64,7 @@ class MyBot:
         self.lastmsg = 0
         self.clientID = ""
         self.msg = {}
+        self.url = "http://localhost:8080"
 
         # Local token
         self.token = "6033951332:AAG2vwBOhgkv14NJbXM0csj7-0up6-ief9E"
@@ -98,6 +99,8 @@ class MyBot:
             self.thingspeak()
         elif (query_data == "back"):
             self.undo()
+        elif (query_data == "daily_episode"):
+            self.daily_episode()
 
            
 
@@ -182,13 +185,19 @@ class MyBot:
     
     """Menu with all possible actions for the patient"""
     def patient_menu(self):
+
         self.position = "patient_menu"
         
         msg = ("This is the patient Menu 🙎🏻‍♂️\n" +
-               "Please write your Patient ID. \n" +
-               "It must be \"patientN\" where N is your number\n")
+               "Please select one of these options. \n" +
+               "\n"+
+               "📊 Actual measures: it is useful to check the mean, min and max value of each sensor.\n"+
+               "\n"+
+               "📅 Daily episodes: it will tell you how many episodes occurred today.\n"+
+               "\n"+
+               "Please wait, it will take few seconds ⌚")
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text='Actual Measurement', callback_data='actualm'), InlineKeyboardButton(text='Daily Episodes', callback_data='daily')],
+                [InlineKeyboardButton(text='Actual Measurement', callback_data='actual_measure'), InlineKeyboardButton(text='Daily Episodes', callback_data='daily_episode')],
                 [InlineKeyboardButton(text='Back', callback_data='back')]
                 ])
         
@@ -201,7 +210,69 @@ class MyBot:
         pass
 
     def daily_episode(self):
-        pass
+        self.position = "daily_episode"
+
+        counter_f4 = 0
+        counter_f5 = 0
+        counter_f6 = 0
+
+        now = time.time()
+        start_time = datetime.datetime.utcfromtimestamp(now).isoformat()
+        current_day = start_time[:11]+"00:00:00.000000"
+    
+        request = self.url+"/patient"
+        response = requests.get(request)
+        response = response.json()
+
+        for patient in response["patients_list"]:
+            if patient["patientID"] == self.clientID:
+                for services in patient["Statistic_services"]:
+                    if services["ServiceName"] == "ThingSpeak":
+                        #self.write_api = services["WriteApi"]
+                        self.read_api = services["ReadApi"]
+                        self.TS_url = services["URL"]
+                        self.TS_channel_ID = services["Channel_ID"]
+
+        request_url = "https://api.thingspeak.com/channels/"+str(self.TS_channel_ID)+"/fields/4.json?api_key="+str(self.read_api)+"&days=24"
+        response = requests.get(request_url)
+        response = response.json()
+
+        for entries in response["feeds"]:
+            if entries["field4"] != None:
+                if entries["created_at"] >= current_day:
+                    counter_f4 += 1
+
+        request_url = "https://api.thingspeak.com/channels/"+str(self.TS_channel_ID)+"/fields/5.json?api_key="+str(self.read_api)+"&days=24"
+        response = requests.get(request_url)
+        response = response.json()
+
+        for entries in response["feeds"]:
+            if entries["field5"] != None:
+                if entries["created_at"] >= current_day:
+                    counter_f5 += 1
+
+        request_url = "https://api.thingspeak.com/channels/"+str(self.TS_channel_ID)+"/fields/6.json?api_key="+str(self.read_api)+"&days=24"
+        response = requests.get(request_url)
+        response = response.json()
+
+        for entries in response["feeds"]:
+            if entries["field6"] != None:
+                if entries["created_at"] >= current_day:
+                    counter_f6 += 1
+
+        episode_message = ("📋 Here are your results!\n"+
+                           "\n"+
+                           f"📌 Numer of falls: {counter_f4} \n"+
+                           f"📌 Number of tremors: {counter_f5} \n"+
+                           f"📌 Numer of freezings: {counter_f6} \n")
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text='Back', callback_data='back')]])
+        
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=episode_message, reply_markup=keyboard)
+        
 
     """Send a message when the command /help is issued."""
     def help(self):
@@ -272,6 +343,8 @@ class MyBot:
         elif(self.position == "patient_menu"):
             self.notification.stop()
             self.patient_login()
+        elif(self.position == "daily_episode"):
+            self.patient_menu()
 
 
 class Notification(threading.Thread):
