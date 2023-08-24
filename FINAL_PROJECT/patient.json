@@ -1,9 +1,9 @@
 {
   "patients_list": [
     {
-      "patientName": "Patient1",
+      "patientName": "Francesco Calice",
       "patientID": "patient1",
-      "patientDocument": "1",
+      "patientDocument": "CLCFNC98D21F104W",
       "device_list": [
         {
           "deviceID": "waist_acc1",
@@ -85,10 +85,10 @@
         },
         {
           "ServiceName": "ThingSpeak",
-          "Channel_ID": 2217643,
-          "URL": "https://api.thingspeak.com/channels/2217643.json",
-          "WriteApi": "WCF3UA5S8U3LKZ5A",
-          "ReadApi": "799GITMWFZO40ZIW",
+          "Channel_ID": 2250276,
+          "URL": "https://api.thingspeak.com/channels/2250276.json",
+          "WriteApi": "K4Z6WPXSCTNXOZD5",
+          "ReadApi": "76C9KR2V2ZBIETN2",
           "Services": [
             {
               "serviceProvider": "Statistic_manager",

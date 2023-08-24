@@ -1,4 +1,3 @@
-
 """ThingSpeak adaptor.
 It collects SenML-formatted json files from sensors via MQTT and publish them
 on ThingSpeak every 15 seconds.
@@ -25,7 +24,11 @@ def data_publish(list, url):
     for item in list:
         print("Publishing:")
         print(json.dumps(item))
-        requests.post(url, data=item)
+        bulk_resp = requests.post(url, data=item)
+        while( bulk_resp.status_code != 202 ):
+            time.sleep(1)
+            bulk_resp = requests.post(url, data=item)
+
 
 def read_file(filename):
     """Read json file to get catalogURL, port, topic and ThingSpeak URL."""
@@ -224,15 +227,12 @@ class MySubscriber(object):
 
                 req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "4" + ".json?api_key=" + read_api
                 resp = json.loads(requests.get(req).text)
-                total_fall = 0
+                total_fall = 1
 
                 if resp["feeds"] != []:
                     for entry in resp["feeds"]:
                         if entry["field4"] != None:
-                            if int(entry["field4"]) > total_fall:
-                                total_fall = int(entry["field4"])  
-
-                total_fall += 1
+                            total_fall += 1
 
                 now = time.time()
                 created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
@@ -243,7 +243,10 @@ class MySubscriber(object):
                     "field4": total_fall
                 }
 
-                requests.post(self.ts_url, msg)
+                fall_r = requests.post(self.ts_url, msg)
+                while (fall_r.status_code != 200):
+                    time.sleep(1)
+                    fall_r = requests.post(self.ts_url, msg)
                 print(f"Fall Occurred and sended on ThingSpeak!, {write_api}")
 
         elif MeasureType == "tremor_manager":
@@ -252,15 +255,12 @@ class MySubscriber(object):
 
                 req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "5" + ".json?api_key=" + read_api
                 resp = json.loads(requests.get(req).text)
-                total_tremor = 0
+                total_tremor = 1
 
                 if resp["feeds"] != []:
                     for entry in resp["feeds"]:
-                        if entry["field5"] != None:
-                            if int(entry["field5"]) > total_tremor:
-                                total_tremor = int(entry["field5"])  
-
-                total_tremor += 1
+                        if entry["field5"] != None: 
+                            total_tremor += 1
 
                 now = time.time()
                 created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
@@ -271,7 +271,10 @@ class MySubscriber(object):
                     "field5": total_tremor
                 }
 
-                requests.post(self.ts_url, msg)
+                tremor_r = requests.post(self.ts_url, msg)
+                while(tremor_r.status_code != 200):
+                    time.sleep(1)
+                    tremor_r = requests.post(self.ts_url, msg)
                 print(f"Tremor Occurred and sended on ThingSpeak! {write_api}")
 
         elif MeasureType == "freezing_manager":
@@ -280,15 +283,12 @@ class MySubscriber(object):
 
                 req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "6" + ".json?api_key=" + read_api
                 resp = json.loads(requests.get(req).text)
-                total_freezing = 0
+                total_freezing = 1
 
                 if resp["feeds"] != []:
                     for entry in resp["feeds"]:
-                        if entry["field6"] != None:
-                            if int(entry["field6"]) > total_freezing:
-                                total_freezing = int(entry["field6"])  
-
-                total_freezing += 1
+                        if entry["field6"] != None: 
+                            total_freezing += 1
 
                 now = time.time()
                 created_at = datetime.datetime.utcfromtimestamp(now).isoformat()
@@ -299,7 +299,10 @@ class MySubscriber(object):
                     "field6": total_freezing
                 }
 
-                requests.post(self.ts_url, msg)
+                frezee_r = requests.post(self.ts_url, msg)
+                while(frezee_r.status_code != 200):
+                    time.sleep(1)
+                    frezee_r = requests.post(self.ts_url, msg)
                 print(f"Freezing Occurred and sended on ThingSpeak! {write_api}")
                     
         elif MeasureType == "WaistAccStats":
@@ -338,6 +341,10 @@ class MySubscriber(object):
                         #print(da)
                         headers = {'Content-Type': 'application/json'}
                         res = requests.post(ts,da,headers=headers)
+                        while(res.status_code != 202):
+                            time.sleep(1)
+                            res = requests.post(ts,da,headers=headers)
+                        print("Bulk Update OK!")
                         data["updates"].clear()    
 
 # Threads

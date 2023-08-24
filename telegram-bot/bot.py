@@ -54,7 +54,6 @@ class MyPublisher(object):
         self._paho_mqtt.publish(topic, message, 2)
         print("Publishing on %s:" % topic)
 
-
 class MyBot:
     def __init__(self):
         
@@ -80,12 +79,11 @@ class MyBot:
             self.start()
         elif (message == "/help"):
             self.help()
-        elif(message == "/stats"):
-            self.stats()
         else:
             if self.flag == 1:
                 self.patientID()
-
+            elif self.flag == 2:
+                self.doctor_menu()
 
     def on_callback_query(self, msg):
         #content_type, chat_type ,self.chat_ID = telepot.glance(msg)
@@ -93,16 +91,19 @@ class MyBot:
         print('Callback Query:', query_id, from_id, query_data)
         if (query_data == "doctor"):
             self.doctor()
+        elif (query_data == "patient_list"):
+            self.patient_list()
+        elif (query_data == "patient_info"):
+            self.patient_info()
         elif (query_data == "patient"):
             self.patient_login()
-        elif (query_data == "ts"):
-            self.thingspeak()
-        elif (query_data == "back"):
-            self.undo()
+        elif (query_data == "actual_measure"):
+            self.actual_measure()
         elif (query_data == "daily_episode"):
             self.daily_episode()
+        elif (query_data == "back"):
+            self.undo()
 
-           
 
     """Send a message when the command /start is issued."""
     def start(self):
@@ -124,20 +125,101 @@ class MyBot:
     def doctor(self):
         
         self.position = "doctor_page"
+        self.flag = 2
 
         msg = ("This is the doctor section 👨🏼‍⚕️\n" + 
-               "Please select the funcionality:\n")
+               "Insert the patient ID (patientN) on the textbox\n" +
+               "Or retrive the list of Patients with the corresponding button\n")
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                   [InlineKeyboardButton(text='MQTT', callback_data='mqtt'),InlineKeyboardButton(text='ThingSpeak', callback_data='ts')],
+                   [InlineKeyboardButton(text='Patient List', callback_data='patient_list')],
                    [InlineKeyboardButton(text='Back', callback_data='back')]
                ])
- 
+
         """Procedure to delete the last message"""
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
         self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
     
+    def patient_list(self):
+        
+        self.position = "patient_list"
+
+        request = self.url+"/patient"
+        response = requests.get(request)
+        response = response.json()
+    
+        list_msg = ("📋 Patient List\n" +
+                    "|Patient Name|Patient ID|\n")
+
+        if(response != -1):
+            for patient in response["patients_list"]:
+                list_msg = list_msg + (f"{patient['patientName']} | {patient['patientID']}\n")
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+                   InlineKeyboardButton(text='Back', callback_data='back')]])
+        
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=list_msg, reply_markup=keyboard)
+    
+    def doctor_menu(self):
+
+        self.position = "doctor_menu"
+        self.flag = 3
+        self.clientID = self.msg["text"]
+        request = self.url+"/info/"+self.clientID
+        response = requests.get(request)
+        response = response.json()
+
+        doctor_msg = (f"Selected Patient: {response['patientName']}\n" +
+                      f"Choose One of the following action:\n" +
+                      f"\n" +
+                      f"👤 Patient Info: Retrive patient information\n" +
+                      f"\n" +
+                      f"📊 Actual measures: it is useful to check the mean value of each sensor.\n" +
+                      f"\n" +
+                      f"📅 Daily episodes: it will tell you how many episodes occurred today.\n" +
+                      "\n"+
+                      "Please wait, it will take few seconds ⌚")
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text='Patient Info', callback_data='patient_info')],
+            [InlineKeyboardButton(text='Actual measures', callback_data='actual_measure')],
+            [InlineKeyboardButton(text='Daily Episodes', callback_data='daily_episode')],
+            [InlineKeyboardButton(text='Back', callback_data='back')]
+            ])
+        
+        """Procedure to delete the last message"""
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=doctor_msg, reply_markup=keyboard)
+
+    def patient_info(self):
+        
+        self.position = "patient_info"
+        request = self.url+"/info/"+self.clientID
+        response = requests.get(request)
+        response = response.json()
+        for services in response["Statistic_services"]:
+            if services["ServiceName"] == "ThingSpeak":
+                read_api = services["ReadApi"]
+                TS_channel_ID = services["Channel_ID"]
+
+        info_msg = ("📋 Here the personal information of the patient:\n" +
+                    f"-Name and surname: {response['patientName']}\n" +
+                    f"-Document ID: {response['patientDocument']}\n" +
+                    f"-Personal channel ID: {TS_channel_ID}\n" +
+                    f"-Personal Read API: {read_api}\n")
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+           InlineKeyboardButton(text='Back', callback_data='back')]])
+    
+        """Procedure to delete the last message"""
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=info_msg, reply_markup=keyboard)
+
     def patient_login(self):
 
         self.position = "patient_page"
@@ -154,14 +236,12 @@ class MyBot:
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))      
         self.lastmsg = self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
-        #notification = Notification("not1", "notification", self)
-        #notification.run()
 
     """Send a message when the patient insert its information"""
     def patientID(self):
         self.position = "login_page"
         
-        self.flag = 0
+        self.flag = 4
 
         """Procedure to delete the last message"""
         self.lastmsg = self.lastmsg["message_id"]
@@ -191,13 +271,13 @@ class MyBot:
         msg = ("This is the patient Menu 🙎🏻‍♂️\n" +
                "Please select one of these options. \n" +
                "\n"+
-               "📊 Actual measures: it is useful to check the mean, min and max value of each sensor.\n"+
+               "📊 Actual measures: it is useful to check the mean value of each sensor.\n"+
                "\n"+
                "📅 Daily episodes: it will tell you how many episodes occurred today.\n"+
                "\n"+
                "Please wait, it will take few seconds ⌚")
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text='Actual Measurement', callback_data='actual_measure'), InlineKeyboardButton(text='Daily Episodes', callback_data='daily_episode')],
+                [InlineKeyboardButton(text='Actual Measurements', callback_data='actual_measure'), InlineKeyboardButton(text='Daily Episodes', callback_data='daily_episode')],
                 [InlineKeyboardButton(text='Back', callback_data='back')]
                 ])
         
@@ -207,7 +287,45 @@ class MyBot:
         self.lastmsg =  self.bot.sendMessage(self.chat_ID, text=msg, reply_markup=keyboard)
 
     def actual_measure(self):
-        pass
+        self.position = "actual_measure"
+
+        request = self.url+"/patient"
+        response = requests.get(request)
+        response = response.json()
+
+        for patient in response["patients_list"]:
+            if patient["patientID"] == self.clientID:
+                for services in patient["Statistic_services"]:
+                    if services["ServiceName"] == "ThingSpeak":
+                        self.read_api = services["ReadApi"]
+                        self.TS_url = services["URL"]
+                        self.TS_channel_ID = services["Channel_ID"]
+
+        request_url = "https://api.thingspeak.com/channels/"+str(self.TS_channel_ID)+"/feeds.json?api_key="+str(self.read_api)+"&average=10"
+        response = requests.get(request_url)
+        response = response.json()
+
+        waist_m = response["feeds"][0]["field1"]
+        if waist_m == None:
+            waist_m = 0
+        wrist_m = response["feeds"][0]["field2"]
+        if wrist_m == None:
+            wrist_m = 0
+        pressure_m = response["feeds"][0]["field3"]
+        if pressure_m == None:
+            pressure_m = 0
+
+        measure_msg = ("📋 Here the last measurements\n"+
+                        f"👖 Waist: {waist_m} \n"+
+                        f"⌚️ Wrist: {wrist_m} \n"+
+                        f"👟 Pressure: {pressure_m} \n")
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text='Back', callback_data='back')]])
+        
+        self.lastmsg = self.lastmsg["message_id"]
+        self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
+        self.lastmsg = self.bot.sendMessage(self.chat_ID, text=measure_msg, reply_markup=keyboard)
 
     def daily_episode(self):
         self.position = "daily_episode"
@@ -289,63 +407,33 @@ class MyBot:
         self.lastmsg = self.lastmsg["message_id"]
         self.bot.deleteMessage((self.chat_ID, self.lastmsg))  
         self.lastmsg = self.bot.sendMessage(self.chat_ID, text=help_message, reply_markup=keyboard)
-
-    """Get the statistics"""
-    def stats(self):
-
-        msg = "📊 Retrieving the last sensor stats...\n"
-        self.bot.sendMessage(self.chat_ID, text=msg)
-
-        uri_broker = 'http://localhost:8080/broker'
-        settings = requests.get(uri_broker).json()
-        port = int(settings["mqtt_port"])
-        broker = settings["IP"]
-        mqtt_id = self.clientID
-        topic = "ParkinsonHelper/" + self.clientID +"/microservices/statistics"
-        stats_subscriber = MQTTsubscriber(mqtt_id, broker, port, topic, self)
-        stats_subscriber.start()
-        print("Subscribed to: " + topic)
-
-    def thingspeak(self):
-        """ Candela's tests :)
-        read_api="J0KGI0GD2XWSZLYW"
-        channel_id = "2210016"
-        
-        channel_info=response.json()
-        write_api=channel_info["api_keys"][0]["api_key"]
-        read_api=channel_info["api_keys"][1]["api_key"]
-        print("Write api: ",write_api)
-        print("Read api: ",read_api)
-
-        fieldID=4
-        url=f"https://api.thingspeak.com/channels/{channel_id}/fields/{fieldID}.json?api_key={read_api}"# gett alla values of the field of the last day
-        start_date="2023-07-02"
-        end_date="2023-07-02"
-        url=f"https://api.thingspeak.com/channels/{channel_id}/fields/{fieldID}.json?api_key={read_api}&start={start_date}&end={end_date}"#get data of field of the day
-        url=f"https://api.thingspeak.com/channels/{channel_id}/fields/{fieldID}.json?api_key={read_api}&result=10" #get last 10 values
-        #In the start day and end day, if you specify the hours, you'll get the values of the hours range  
-        response=requests.get(url)
-        data=response.json()
-        feeds = data['feeds']
-        
-        values = [feed[f'field{fieldID}'] for feed in feeds]
-        print(values)
-        filtered_data = [x for x in values if x is not None ] #to create a list of value without values=None
-        """
         
     def undo(self):
         if (self.position == "help_page"):
             self.start()
         elif(self.position == "doctor_page"):
             self.start()
+        elif(self.position == "patient_list"):
+            self.doctor()
+        elif(self.position == "doctor_menu"):
+            self.doctor()
+        elif(self.position == "patient_info"):
+            self.doctor_menu()
         elif(self.position == "patient_page"):
             self.start()
         elif(self.position == "patient_menu"):
             self.notification.stop()
             self.patient_login()
+        elif(self.position == "actual_measure"):
+            if self.flag == 4:
+                self.patient_menu()
+            elif self.flag == 3:
+                self.doctor_menu()
         elif(self.position == "daily_episode"):
-            self.patient_menu()
-
+            if self.flag == 4:
+                self.patient_menu()
+            elif self.flag == 3:
+                self.doctor_menu()
 
 class Notification(threading.Thread):
     def __init__(self, ThreadID, name, telebot_instance):
@@ -373,7 +461,6 @@ class Notification(threading.Thread):
     
     def stop(self):
         self.sub.stop()
-
 
 class MQTTsubscriber(object):
     
@@ -413,10 +500,33 @@ class MQTTsubscriber(object):
 
     def my_on_message_received(self, client, userdata, msg):
         """Define custom on_message function."""
-        print("msg received")
-        msg_to_send = ""
-        sensor_info = json.loads(msg.payload)
-        print(sensor_info)
+        message = json.loads(msg.payload.decode("utf-8"))
+        #print(message)
+        devID = message['bn']
+        devID = devID.split('/')
+        topic = devID[1]
+
+        if topic == "tremor_manager":
+            t = message["e"][0]["timeStamp"]
+            episode = datetime.datetime.utcfromtimestamp(t).isoformat()
+            tremor_message = ("⚠️ ATTENTION ⚠️\n"
+                              "The Patient has suffered a tremor episode ⚡️\n"
+                              "Date: " + f"{episode}")
+            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=tremor_message)
+        elif topic == "freezing_manager":
+            t = message["e"][0]["timeStamp"]
+            episode = datetime.datetime.utcfromtimestamp(t).isoformat()
+            freezing_message = ("⚠️ ATTENTION ⚠️\n"
+                              "The Patient has suffered of a freezing episode ❄️\n"
+                              "Date: " + f"{episode}")
+            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=freezing_message)
+        elif topic == "fall_manager":
+            t = message["e"][0]["timeStamp"]
+            episode = datetime.datetime.utcfromtimestamp(t).isoformat()
+            fall_message = ("⚠️ ATTENTION ⚠️\n"
+                              "The Patient has suffered of a fall episode 💢\n"
+                              "Date: " + f"{episode}")
+            self.telebot.bot.sendMessage(self.telebot.chat_ID, text=fall_message)
 
 def broker_info(url, port):
     """Get broker information.
@@ -429,7 +539,6 @@ def broker_info(url, port):
     broker_ip = json.loads(broker.text)["IP"]
     mqtt_port = json.loads(broker.text)["mqtt_port"]
     return (broker_ip, mqtt_port)
-
 
 def main():
 
