@@ -130,10 +130,27 @@ if __name__ == "__main__":
 
     # Get info about port and broker
     microserviceID = conf_file["microservice_ID"]
-    settings = requests.get(conf_file["broker_uri"]).json()
+    sensor_topic = conf_file["sensor_topic"]
+    actuator_topic = conf_file["actuator_topic"]
+    print(actuator_topic)
+
+
+    while True:
+        try:
+            settings = requests.get(conf_file["broker_uri"])
+            if settings.status_code == 200:
+                print("Server is up and running!")
+                break  # Exit the loop when the server is available
+        except requests.ConnectionError:
+            print("Server is not yet available. Retrying in 2 seconds...")
+            time.sleep(2)
+
+    settings = settings.json()
+
     port = int(settings["mqtt_port"])
     broker = settings["IP"]
 
+    """
     # Get client's sensors
     while (True):
         client_info= requests.get(conf_file["information_uri"]).json()
@@ -158,6 +175,8 @@ if __name__ == "__main__":
 
     actuator_args = actuator.split('/')
     actuator_topic = actuator_args[0] +"/PATIENT_ID/" + actuator_args[2] + "/" + actuator_args[3]
+
+    """
     tm = freezing_management(microserviceID, port, broker, sensor_topic, actuator_topic)
     tm.start()
     tm.subscriber()

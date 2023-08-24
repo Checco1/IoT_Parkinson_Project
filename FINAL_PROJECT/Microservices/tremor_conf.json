@@ -1,7 +1,6 @@
 {
     "microservice_ID" : "tremor147852",
     "broker_uri" : "http://localhost:8080/broker",
-    "information_uri" : "http://localhost:8080/info/patient1",
-    "sensor_ID": "wrist_acc1",
-    "actuator_ID" : "dbs1"
+    "sensor_topic" : "ParkinsonHelper/+/sensors/#",
+    "actuator_topic" : "ParkinsonHelper/PATIENT_ID/microservices/tremor"
 }
