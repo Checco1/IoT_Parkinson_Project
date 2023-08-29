@@ -396,9 +396,18 @@ class MyBot:
     def help(self):
         self.position = "help_page"
         
-        help_message = ("*This is your Parkinson Helper Bot Help menu!\n"
-                        "You can perform the following actions:\n"
-                        "- '/stats': Get your health statistics 📈\n"
+        help_message = ("👨🏽‍⚕️ This is your ParkinsonHelper Help menu!👩🏼‍🔧\n"
+                        "After going back to the previous menu, you have to choose if you're a Doctor or a Patient.\n"
+                        "\n"
+                        "If you press 'Doctor' button, you will be able to:"
+                        "📋 See the list of your patients, with name, surname and ID"
+                        "📬 Require info about a specific patient"
+                        "📅 See the daily episodes of one patient"
+                        "📊 See the average value of the measurements acquired in the last minute of one patient"
+                        "\n"
+                        "If you press 'Patient', after inserting your ID you will be able to:"
+                        "📅 See your daily episodes"
+                        "📊 See the average value of the measurements acquired in the last minute"
                         )
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[

@@ -73,7 +73,7 @@ if __name__ == "__main__":
     print("The actuator DBS2 is not active")
 
     #Retrieve MQTT info (topics and settings) from patient.json
-    patientID = "patient1"
+    patientID = "patient2"
     info=RetrievePatientInfo("http://localhost:8080")
     topic=info.GetTopic(patientID)
     topic_activation = topic["activation"]
