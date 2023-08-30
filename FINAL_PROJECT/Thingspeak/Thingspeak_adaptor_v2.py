@@ -210,7 +210,7 @@ class MySubscriber(object):
         string = "http://" + self.url + ":" + self.port + "/info/" + patientID
         info = json.loads(requests.get(string).text)
         if info != -1:
-            for service in info["Services_p"]:
+            for service in info["Statistic_services"]:
                 if service["ServiceName"] == "ThingSpeak":
                     channel_id = service["Channel_ID"]
                     write_api = service["WriteApi"]
@@ -225,7 +225,7 @@ class MySubscriber(object):
             value = i["value"]
             if value == 1:
 
-                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "4" + ".json?api_key=" + read_api
+                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "4" + ".json?api_key=" + read_api + "&results=8000"
                 resp = json.loads(requests.get(req).text)
                 total_fall = 1
 
@@ -253,7 +253,7 @@ class MySubscriber(object):
             value = i["value"]
             if value == 1:
 
-                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "5" + ".json?api_key=" + read_api
+                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "5" + ".json?api_key=" + read_api + "&results=8000"
                 resp = json.loads(requests.get(req).text)
                 total_tremor = 1
 
@@ -281,7 +281,7 @@ class MySubscriber(object):
             value = i["value"]
             if value == 1:
 
-                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "6" + ".json?api_key=" + read_api
+                req = "https://api.thingspeak.com/channels/" + str(channel_id) + "/fields/" + "6" + ".json?api_key=" + read_api + "&results=8000"
                 resp = json.loads(requests.get(req).text)
                 total_freezing = 1
 
@@ -332,7 +332,7 @@ class MySubscriber(object):
                     if person["Write_Api"] == data["write_api_key"]:
                         string = "http://" + self.url + ":" + self.port + "/info/" + patientID
                         info = json.loads(requests.get(string).text)
-                        for service in info["Services_p"]:
+                        for service in info["Statistic_services"]:
                             if service["ServiceName"] == "ThingSpeak":
                                 channel_id = service["Channel_ID"]
                         ts = f"https://api.thingspeak.com/channels/{channel_id}/bulk_update.json"

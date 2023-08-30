@@ -2,10 +2,5 @@
   "broker": {
     "IP": "test.mosquitto.org",
     "mqtt_port": "1883"
-  },
-  "thingspeak": {
-    "IP": "TBD",
-    "port": "TBD"
-  },
-  "patients_list": []
+  }
 }

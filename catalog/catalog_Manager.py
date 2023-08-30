@@ -239,16 +239,13 @@ class Webserver(object):
         if uri[0] == 'broker':
             return cat.service["broker"]
 
-        if uri[0] == 'ts':
-            return cat.service["thingspeak"]
-
         # Get Resource catalog json.
         if uri[0] == 'resource':
             return cat.resource
 
         # Get Service catalog json.
         if uri[0] == 'service':
-            return cat.patient["Service_list"]
+            return cat.service
         
         # Get Patients catolog json
         if uri[0] == 'patient':

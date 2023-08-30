@@ -27,7 +27,7 @@ class RetrievePatientInfo():
         numberID=str(patientID).replace("patient","")
         response = requests.get(request)
         response_json=response.json()
-        for device in response_json["devices"]:
+        for device in response_json["device_list"]:
             if device["deviceType"]=="sensor":
               for service in device["Services"]:
                   if service["serviceType"] == "MQTT":

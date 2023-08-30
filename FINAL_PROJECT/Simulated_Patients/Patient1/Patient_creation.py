@@ -179,7 +179,7 @@ class CreatePatient():
         url=f"https://api.thingspeak.com/channels.json"
         data={
             "api_key":api_key,
-            "name":str(ID),
+            "name":str(self.name),
             "field1":"waistStats",
             "field2":"wristStats",
             "field3":"pressureStats",
