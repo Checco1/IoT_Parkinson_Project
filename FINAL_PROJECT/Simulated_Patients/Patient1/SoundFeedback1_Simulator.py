@@ -14,7 +14,7 @@ class RetrievePatientInfo():
         request=self.url+"/info/"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
-        for device in response_json["devices"]:
+        for device in response_json["device_list"]:
             if device["deviceID"]=="sf1":
                 for service in device["Services"]:
                     if service["serviceType"] == "MQTT":
@@ -52,12 +52,13 @@ class SFSimulator():
     def notify(self, topic, msg):
         d = json.loads(msg)
         client = d["bn"]
-        if self.sf_activation == True:
-            print("SF for patient 1 already activated!")
-        else:
-            self.sf_activation= True
-            print(f"The microservice has started the activation with the topic {topic}")
-            self.t_activation=time.time()
+        self.sf_activation= True
+        print(f"The microservice has started the activation with the topic {topic}")
+        self.t_activation = time.time()
+        while abs(self.t_activation-time.time())<5:
+            pass
+        self.sf_activation_activation = False
+        print("The SF1 has been deactivated!")
 
     def Update(self):
         self.message["e"][0]["timeStamp"]=time.time()
@@ -90,11 +91,6 @@ if __name__ == "__main__":
 
     while True:
         sf_timeUpdate=time.time()-start
-        if sf_timeUpdate>25:
+        if sf_timeUpdate>20:
             soundfeedback1.Update()
             start=time.time()
-
-        if soundfeedback1.sf_activation==True and abs(soundfeedback1.t_activation-time.time())>5:
-            soundfeedback1.sf_activation=False
-            print("The SF1 has been deactivated!")
-            #this condition simulate the deactivation of the SF after 10 seconds

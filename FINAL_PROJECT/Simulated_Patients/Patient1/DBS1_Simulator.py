@@ -14,7 +14,7 @@ class RetrievePatientInfo():
         request=self.url+"/info/"+str(patientID)
         response = requests.get(request)
         response_json=response.json()
-        for device in response_json["devices"]:
+        for device in response_json["device_list"]:
             if device["deviceID"]=="dbs1":
                 for service in device["Services"]:
                     if service["serviceType"] == "MQTT":
@@ -52,12 +52,14 @@ class DBSSimulator():
     def notify(self, topic, msg):
         d = json.loads(msg)
         client = d["bn"]
-        if self.dbs_activation == True:
-            print("DBS for patient 1 already activated!")
-        else:
-            self.dbs_activation= True
-            print(f"The microservice has started the activation with the topic {topic}")
-            self.t_activation=time.time()
+        self.dbs_activation= True
+        print(f"The microservice has started the activation with the topic {topic}")
+        self.t_activation = time.time()
+        while abs(self.t_activation-time.time())<5:
+            pass
+        self.dbs_activation = False
+        print("The DBS has been deactivated!")
+
 
     def Update(self):
         self.message["e"][0]["timeStamp"]=time.time()
@@ -91,13 +93,6 @@ if __name__ == "__main__":
     while True:
         #Update every 25 seconds sending an MQTT message to catalog_Manager
         dbs_timeUpdate=time.time()-start
-        if dbs_timeUpdate>25:
+        if dbs_timeUpdate>20:
             dbs1.Update()
             start=time.time()
-
-        if dbs1.dbs_activation==True and abs(dbs1.t_activation-time.time())>5:
-            print("The DBS has been deactivated!")
-            dbs1.dbs_activation=False
-            #this condition simulate the deactivation of the DBS after
-            #a certain amount of time (in reality, it would be a larger
-            #range)
