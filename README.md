@@ -40,20 +40,6 @@ py DBS1_Simulator.py
 py SoundFeedback1_Simulator.py
 ```
 
-Script for patient 2 registration:
-
-```
-cd Simulated_Patients/Patient2
-py Patient2_Simulator.py
-```
-
-Script for patient 2 registration:
-
-```
-py DBS2_Simulator.py
-py SoundFeedback2_Simulator.py
-```
-
 ### Microservices
 
 Run all the scripts on Microservices
