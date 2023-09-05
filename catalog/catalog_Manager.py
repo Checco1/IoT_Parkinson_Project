@@ -241,11 +241,11 @@ class Webserver(object):
 
         # Get Resource catalog json.
         if uri[0] == 'resource':
-            return cat.resource
+            return json.dumps(cat.resource)
 
         # Get Service catalog json.
         if uri[0] == 'service':
-            return cat.service
+            return json.dumps(cat.service)
         
         # Get Patients catolog json
         if uri[0] == 'patient':

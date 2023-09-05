@@ -371,79 +371,11 @@ class SendData(threading.Thread):
         sub.start()
 
         while True:
-            time.sleep(1)
-
-            #while time_flag == 0: 
-            """# wait untill the time_flag becomes 1, so every 15 sec except the first cycle that we have
-                global time_flag = 1"""
-            #    time.sleep(0.1)
-
-            # waiting for the connection. when the system is connected to the broker, loop_flag becomes false
-            #while loop_flag:
-                #print("Waiting for connection...")
-                #time.sleep(0.1)
-
-            # Collecting data for 15 seconds. it stops when the time_flag becomes 0 (so after 15 sec)
-           # while time_flag == 1:
-            #    time.sleep(0.1)
-
-            # Publish json data on thingspeak. Different patient=different channel
-            #print(self.ts_url)
-            #data_publish(sub.send_data(), self.ts_url)
-        
+            time.sleep(1) 
 
 if __name__ == "__main__":
 
-    """api_key="5LWQ3IHY3DY8TILH"
-    url=f"https://api.thingspeak.com/channels.json"
-    data={
-        "api_key":api_key,
-        "field1":"waistStats",
-        "field2":"wristStats",
-        "field3":"pressureStats",
-        "field4":"fall_episodes",
-        "field5":"tremor_episode",
-        "field6":"freezing_episode"
-    }
-    response=requests.post(url,json=data)
-    if response.status_code==200:
-        new_channel=response.json()
-        channel_id=new_channel["id"]
-        print("New channel added with id: ",channel_id)
-    else:
-        print("Error in the channel creation")
-    url=f"https://api.thingspeak.com/channels/{channel_id}.json"
-    params={"api_key":api_key}
-    response=requests.get(url,params=params)
-    
-    channel_info=response.json()
-    write_api=channel_info["api_keys"][0]["api_key"]
-    read_api=channel_info["api_keys"][1]["api_key"]
-    print("Write api: ",write_api)
-    print("Read api: ",read_api) """
-
     thread1 = SendData(1, "SendData")
     thread1.start()
-    #thread2 = Timer(2, "Timer")
-    #thread2.start()
 
-    """ read values of field od the patient
-    read_api="E7JRP689C2U0W11U"
-    channelID=2202640
-    fieldID=4
-    url=f"https://api.thingspeak.com/channels/{channelID}/fields/{fieldID}.json?api_key={read_api}"# gett alla values of the field of the last day
-    start_date="2023-06-27"
-    end_date="2023-06-27"
-    url=f"https://api.thingspeak.com/channels/{channelID}/fields/{fieldID}.json?api_key={read_api}&start={start_date}&end={end_date}"#get data of field of the day
-    url=f"https://api.thingspeak.com/channels/{channelID}/fields/{fieldID}.json?api_key={read_api}&result=10" #get last 10 values
-    #In the start day and end day, if you specify the hours, you'll get the values of the hours range  
-    response=requests.get(url)
-    data=response.json()
-    feeds = data['feeds']
-    
-    
-    values = [feed[f'field{fieldID}'] for feed in feeds]
-    print(values)
-    filtered_data = [x for x in values if x is not None ] #to create a list of value without values=None
-    
-    #print("DATA from field%s = ",(fieldID,data))"""
+
